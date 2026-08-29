@@ -81,7 +81,10 @@ ignore = [
 
 # ---------------------------------------------------------------- mypy
 [tool.mypy]
-python_version = "3.11"
+# Sem `python_version` fixo: o alvo acompanha o interpretador. Com 3.11 fixo, rodar sob 3.12
+# quebra ao analisar os stubs do numpy, que usam `type X = ...` (PEP 695, só 3.12+). A matriz
+# do CI roda mypy em 3.11 e 3.12, então as duas versões continuam cobertas; quem impede
+# sintaxe nova no nosso código é o `target-version = "py311"` do ruff.
 strict = true
 warn_unreachable = true
 files = ["src/swing_quant"]
