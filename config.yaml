@@ -1,0 +1,117 @@
+# Configuração principal do Swing Quant.
+# Segredos (tokens, API keys) NÃO ficam aqui — usar variáveis de ambiente (ver .env.example).
+
+capital:
+  initial: 100000          # em moeda do mercado principal (BRL)
+  currency: BRL
+  initial_by_market:       # sleeves independentes por mercado (ADR-016)
+    b3: 100000             # R$
+    us: 20000              # US$
+
+risk:
+  risk_per_trade: 0.005    # 0,5% por trade (Q1 resolvida em ADR-013)
+  risk_per_trade_by_market: # ADR-018: cada sleeve dentro do mesmo orçamento de DD (15% em 1 ano)
+    b3: 0.005              # Donchian: DD p95 1a -12,8%
+    us: 0.0035             # Momentum a 0,5% dava -19,7%; a 0,35% -> -13,9%
+  atr_multiple_default: 2.0
+  max_position_pct: 0.20   # nenhuma posição > 20% do capital
+  max_positions: 6
+  max_gross_exposure: 1.00
+  max_sector_pct: 0.30
+  max_correlation: 0.80
+  max_strategy_pct: 0.50
+  max_volume_participation: 0.01   # <= 1% do volume financeiro médio 20d
+  monthly_dd_reduce: 0.06          # DD mensal > 6% -> reduz sizing 50%
+  circuit_breaker_dd: 0.15         # DD do pico > 15% -> para de abrir posições
+  board_lot: 100
+
+costs:
+  b3:
+    commission_per_order: 0.0
+    fees_pct: 0.0003
+    slippage_pct_liquid: 0.0010
+    slippage_pct_illiquid: 0.0020
+  us:
+    commission_per_order: 0.0
+    fees_pct: 0.00001
+    slippage_pct_liquid: 0.0005
+    slippage_pct_illiquid: 0.0010
+
+universe:
+  b3:
+    index: IBRX100
+    benchmark: "^BVSP"
+    suffix: ".SA"
+    min_avg_dollar_volume_20d: 10000000      # R$ 10 mi
+  us:
+    index: SP500
+    benchmark: SPY
+    suffix: ""
+    min_avg_dollar_volume_20d: 20000000      # US$ 20 mi
+
+regime:
+  trend_filter: false      # ADR-013: IBOV>SMA200 bloqueando entradas piorou Sharpe e MDD
+  vol_filter: true         # vol realizada > p90 -> sizing x 0.5
+  benchmark_sma: 200
+  high_vol_percentile: 0.90
+  high_vol_size_factor: 0.5
+
+data:
+  db_path: data/market.duckdb
+  parquet_dir: data/parquet
+  history_start: "2010-01-01"
+  execution: next_open        # sinal em D -> execução na abertura de D+1 (ADR-003)
+
+validation:
+  split: [0.6, 0.2, 0.2]
+  walkforward:
+    train_years: 3
+    test_years: 1
+    anchored: false
+  min_trades: 200
+  min_test_trades: 30
+  cost_multipliers: [0, 1, 2, 3]
+  monte_carlo_runs: 1000
+
+strategies:
+  rsi2:
+    enabled: false           # reprovada 27/08/2026 (docs/08)
+    rsi_period: 2
+    rsi_entry: 10
+    exit_sma: 5
+    trend_sma: 200
+    max_hold: 5
+    stop_atr: null            # Connors original: sem stop de preço
+  donchian:
+    enabled: true
+    markets: [b3]            # ADR-016: sleeve B3
+    entry_lookback: 40   # escolhido no treino pelo protocolo (27/08/2026)
+    exit_lookback: 10
+    volume_mult: 1.5
+    stop_atr: 2.0
+  drops_ibs:
+    enabled: false           # reprovada 27/08/2026 (docs/08)
+    min_consecutive_drops: 3
+    ibs_max: 0.2
+    max_hold: 3
+  momentum:
+    enabled: true            # ADR-016: 9/10 nos EUA — paper trading como sleeve EUA
+    markets: [us]
+    lookback: 189            # escolhido no treino pelo protocolo (27/08/2026)
+    skip: 21
+    exit_sma: 50
+    max_hold: 63
+    stop_atr: 3.0
+  pullback:
+    enabled: false           # Fase 6 — em validação
+    fast_sma: 20
+    mid_sma: 50
+    slow_sma: 200
+    target_lookback: 10
+    max_hold: 10
+    stop_atr: 0.5
+
+alerts:
+  telegram:
+    enabled: false
+    top_n: 10

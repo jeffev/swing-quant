@@ -1,0 +1,90 @@
+name: Screener diário
+
+# 19:30 BRT = 22:30 UTC (B3 fecha 18:00 BRT; dados consolidados). Sábado: refaz o histórico
+# completo (adj_close muda a cada provento — ADR-009/Q8).
+on:
+  schedule:
+    - cron: "30 22 * * 1-5"   # seg–sex: incremental + screener
+    - cron: "0 12 * * 6"      # sábado: --full
+    - cron: "0 9 1 * *"       # dia 1: saúde das estratégias + relatório mensal (Fase 5)
+  workflow_dispatch:
+    inputs:
+      market:
+        description: "b3 | us | all"
+        default: "b3"
+      dry_run:
+        description: "não persiste nem envia alerta"
+        type: boolean
+        default: false
+
+concurrency:
+  group: screener
+  cancel-in-progress: false
+
+jobs:
+  screen:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+      TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+      MARKET: ${{ github.event.inputs.market || 'b3' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - run: uv python install 3.12
+      - run: uv sync
+
+      # O DuckDB (~150 MB) vive no cache do Actions: restaura o mais recente, salva ao final.
+      - name: Restaurar banco
+        id: restore
+        uses: actions/cache/restore@v4
+        with:
+          path: data/market.duckdb
+          key: market-duckdb-${{ github.run_id }}
+          restore-keys: |
+            market-duckdb-
+
+      - name: Atualizar dados (incremental)
+        if: github.event.schedule != '0 12 * * 6' && github.event.schedule != '0 9 1 * *'
+        run: uv run swing-quant update-data --market "$MARKET"
+
+      - name: Atualizar dados (completo — sábado)
+        if: github.event.schedule == '0 12 * * 6'
+        run: uv run swing-quant update-data --market all --full
+
+      - name: Screener
+        if: github.event.schedule != '0 12 * * 6' && github.event.schedule != '0 9 1 * *'
+        run: |
+          FLAGS=""
+          if [ "${{ github.event.inputs.dry_run }}" = "true" ]; then FLAGS="--dry-run"; fi
+          uv run swing-quant screen --market "$MARKET" $FLAGS
+
+      - name: Saúde das estratégias + relatório mensal (dia 1)
+        if: github.event.schedule == '0 9 1 * *'
+        run: |
+          uv run swing-quant health --market "$MARKET"
+          uv run swing-quant monthly-report --market "$MARKET"
+
+      - name: Publicar relatório mensal
+        if: github.event.schedule == '0 9 1 * *'
+        uses: actions/upload-artifact@v4
+        with:
+          name: monthly-report
+          path: reports/monthly_*.md
+          retention-days: 90
+
+      - name: Salvar banco
+        if: always() && steps.restore.outcome == 'success'
+        uses: actions/cache/save@v4
+        with:
+          path: data/market.duckdb
+          key: market-duckdb-${{ github.run_id }}
+
+      - name: Alerta de falha
+        if: failure()
+        run: uv run swing-quant notify-failure --step "${{ job.status }}" --market "$MARKET"

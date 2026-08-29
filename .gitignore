@@ -1,0 +1,34 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+dist/
+build/
+
+# Ferramentas
+.ruff_cache/
+.mypy_cache/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Dados e segredos
+data/*
+!data/.gitignore
+.env
+*.duckdb
+*.duckdb.wal
+
+# Notebooks
+notebooks/.ipynb_checkpoints/
+notebooks/*.parquet
+
+# Relatórios gerados
+reports/
+
+# IDE / SO
+.vscode/
+.idea/
+Thumbs.db
+.DS_Store
