@@ -1,7 +1,8 @@
 """Saúde por estratégia e regra de desligamento automático (docs/04 §4).
 
 Mensalmente: compara o realizado com o esperado do último backtest da estratégia.
-Alerta se Sharpe rolling 6 meses < 0 **ou** drawdown atual pior que o MC p95 do backtest.
+Alerta se Sharpe rolling 6 meses < 0 **ou** drawdown atual pior que o p95 simulado de 1 ano
+do backtest (bootstrap em blocos dos retornos diários, ADR-017).
 Dois alertas consecutivos → estratégia **pausada** (o screener deixa de gerar entradas para ela;
 saídas de posições abertas continuam). Reativação é decisão humana (`health --resume`).
 """

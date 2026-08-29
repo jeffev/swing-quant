@@ -709,7 +709,7 @@ def health(
     resume: Annotated[str | None, typer.Option(help="Reativa a estratégia informada")] = None,
     config: ConfigOpt = DEFAULT_CONFIG_PATH,
 ) -> None:
-    """Saúde por estratégia (Sharpe 6m, drawdown vs MC p95); 2 alertas seguidos → pausa."""
+    """Saúde por estratégia (Sharpe 6m, drawdown vs DD p95 de 1 ano); 2 alertas seguidos → pausa."""
     import datetime as dt
 
     from swing_quant.data.store import MarketStore

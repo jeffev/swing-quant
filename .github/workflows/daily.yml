@@ -11,7 +11,7 @@ on:
     inputs:
       market:
         description: "b3 | us | all"
-        default: "b3"
+        default: "all"
       dry_run:
         description: "não persiste nem envia alerta"
         type: boolean
@@ -28,7 +28,9 @@ jobs:
     env:
       TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
       TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-      MARKET: ${{ github.event.inputs.market || 'b3' }}
+      # Em execução agendada não há `inputs` — o padrão precisa cobrir as duas sleeves
+      # (Donchian/B3 e Momentum/EUA, ADR-016), senão a dos EUA nunca roda.
+      MARKET: ${{ github.event.inputs.market || 'all' }}
     steps:
       - uses: actions/checkout@v4
 
