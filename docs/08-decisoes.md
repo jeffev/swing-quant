@@ -178,7 +178,8 @@ duplica sinais do mesmo dia; a Fase 5 (aderência real × esperada) já tem os d
 - **Retorno por estratégia**: P&L de cada trade fechado distribuído uniformemente entre entrada
   e saída, dividido pelo patrimônio do dia anterior — aproximação suficiente para Sharpe 6m.
 - **Regra de desligamento** (`monitoring/health.py`, docs/04 §4): mensal; alerta se Sharpe 6m
-  < 0 **ou** DD atual pior que o MC p95 do último backtest (`backtest_runs`); 2 alertas
+  < 0 **ou** DD atual pior que o MC p95 do último backtest (`backtest_runs`) — desde o **ADR-017**
+  a comparação usa o p95 do bootstrap diário de 1 ano (`Expected.dd_p95`); 2 alertas
   consecutivos → `paused`; o screener não gera entradas para estratégias pausadas (saídas
   continuam); reativação é manual (`health --resume`). Menos de 40 observações → sem veredito.
 - **Relatório mensal** (`monitoring/monthly.py`): realizado × esperado, aderência, slippage,
@@ -200,6 +201,8 @@ Donchian-B3. Duas estratégias, dois mercados, duas moedas: correlação estrutu
 - Capital por sleeve: `capital.initial_by_market` (B3 R$ 100 k, EUA US$ 20 k inicial);
   screener, health e relatório mensal usam `capital.for_market(mkt)`.
 - Ambas em **paper trading** (journal) até acumular OOS real; formalmente nenhuma está aprovada.
+  <br>↳ **Superado em 28/08/2026**: as duas foram aprovadas 10/10 (ADR-017 e ADR-018). Seguem em
+  paper trading por falta de execução real, não por falta de validação.
 **Carteira Momentum-EUA (2010–2026, regras + vol)**: CAGR 12,9%, Sharpe 1,14, MDD −17,2%,
 PF 1,64, 3.676 trades; último terço Sharpe 1,74 / MDD −16,8%. SPY: 14,2% / 0,86 / −33,7%.
 Ablação: regime neutro; regras de carteira reduzem MDD (−21%→−17%) sem custo de Sharpe.
