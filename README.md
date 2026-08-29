@@ -8,8 +8,9 @@ protocolo de validação, estratégias e risco de carteira, screener com paridad
 Telegram, cron, dashboard, relatório mensal e regra de desligamento. **Fase 6 em curso**: duas
 sleeves **aprovadas 10/10** em 28/08/2026 — Donchian na B3 e Momentum nos EUA (ADR-016), cada uma
 com seu capital (`capital.initial_by_market`), seu risco por trade (`risk_per_trade_by_market`,
-ADR-018) e habilitação por mercado (`markets:`). Em produção falta apenas o primeiro push +
-secrets).
+ADR-018) e habilitação por mercado (`markets:`). Repositório publicado em 29/08/2026
+(`github.com/jeffev/swing-quant`, privado) com CI verde em 3.11/3.12; o cron diário está ativo.
+Falta só configurar os secrets do Telegram para os alertas saírem).
 
 > O critério de drawdown do protocolo mudou em 28/08/2026 (**ADR-017**): o gate é o p95 do
 > bootstrap em blocos dos retornos diários com **horizonte de 1 ano**, calibrado contra as

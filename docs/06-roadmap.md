@@ -105,9 +105,16 @@ segunda perna não correlacionada.
 
 **Conclusão**: 20 pregões consecutivos com execução automática sem intervenção;
 sinais gerados coincidem com o que o backtester geraria para as mesmas datas (teste de paridade).
-Status 27/08/2026: paridade ✅ (teste + reprocessamento real); **os 20 pregões só começam a
-contar após o primeiro push para o GitHub e a configuração dos secrets `TELEGRAM_BOT_TOKEN` /
-`TELEGRAM_CHAT_ID`** (e `alerts.telegram.enabled: true` no config).
+Status 29/08/2026: paridade ✅ (teste + reprocessamento real). **Repositório publicado**
+(`github.com/jeffev/swing-quant`, privado), CI verde em 3.11 e 3.12, workflow "Screener diário"
+ativo — a contagem dos 20 pregões começa no primeiro cron. O `MARKET` do cron passou a `all`:
+em execução agendada não há `github.event.inputs`, então o padrão anterior (`b3`) deixava a
+sleeve dos EUA sem atualização de dados e sem screener.
+Pendente: `TELEGRAM_BOT_TOKEN` / `TELEGRAM_CHAT_ID` (`gh secret set`) e
+`alerts.telegram.enabled: true` no config — sem eles o screener roda e grava no journal
+normalmente, só não envia alerta. Atenção ao primeiro cron: o cache do Actions está vazio,
+então o `update-data` reconstrói o banco inteiro (dois mercados, desde 2010) dentro do
+`timeout-minutes: 45`.
 
 ---
 
