@@ -57,7 +57,10 @@ jobs:
 
       - name: Atualizar dados (completo — sábado)
         if: github.event.schedule == '0 12 * * 6'
-        run: uv run swing-quant update-data --market all --full
+        run: |
+          uv run swing-quant update-data --market all --full
+          # baseline das comparações (CDI e T-bills); semanal basta
+          uv run swing-quant update-riskfree --market all
 
       - name: Screener
         if: github.event.schedule != '0 12 * * 6' && github.event.schedule != '0 9 1 * *'

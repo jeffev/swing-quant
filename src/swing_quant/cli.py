@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Annotated
+from typing import TYPE_CHECKING, Annotated
 
 import pandas as pd
 import typer
@@ -12,8 +12,11 @@ from rich.table import Table
 
 from swing_quant import __version__
 from swing_quant.backtest.metrics import Metrics
-from swing_quant.config import DEFAULT_CONFIG_PATH, load_config
+from swing_quant.config import DEFAULT_CONFIG_PATH, Config, load_config
 from swing_quant.data.calendar import Market
+
+if TYPE_CHECKING:
+    from swing_quant.backtest.protocol import ProtocolResult
 
 app = typer.Typer(
     name="swing-quant",
@@ -252,6 +255,36 @@ def verify_cotahist(
     raise typer.Exit(code=0 if bad.empty else 1)
 
 
+@app.command("update-riskfree")
+def update_riskfree(
+    market: MarketOpt = "all",
+    start: Annotated[str, typer.Option(help="Data inicial (YYYY-MM-DD)")] = "2010-01-01",
+    end: Annotated[str | None, typer.Option(help="Data final (YYYY-MM-DD)")] = None,
+    config: ConfigOpt = DEFAULT_CONFIG_PATH,
+) -> None:
+    """Baixa a renda fixa de referência de cada mercado: CDI (BCB) e T-bills dos EUA (BIL).
+
+    Só alimenta as comparações (dashboard e relatórios) — o backtest continua sem remunerar o
+    caixa das carteiras, então nenhum resultado histórico muda por causa deste comando.
+    """
+    import datetime as dt
+
+    from swing_quant.data.riskfree import RISK_FREE_LABEL, update_risk_free
+    from swing_quant.data.store import MarketStore
+
+    cfg = load_config(config)
+    ini = dt.date.fromisoformat(start)
+    fim = dt.date.fromisoformat(end) if end else None
+    with MarketStore(cfg.data.db_path) as store:
+        for mkt in _markets(market):
+            try:
+                n = update_risk_free(store, mkt, ini, fim)
+            except Exception as exc:
+                console.print(f"[red]{RISK_FREE_LABEL[mkt]}: falhou[/red] — {exc}")
+                raise typer.Exit(code=1) from exc
+            console.print(f"{RISK_FREE_LABEL[mkt]} ({mkt}): {n} dias gravados")
+
+
 @app.command()
 def backtest(
     strategy: Annotated[str, typer.Option(help="Nome da estratégia (ex.: rsi2)")],
@@ -266,6 +299,147 @@ def backtest(
     config: ConfigOpt = DEFAULT_CONFIG_PATH,
 ) -> None:
     """Roda o protocolo completo de validação (docs/04) e gera relatório em Markdown."""
+    cfg = load_config(config)
+    mkts = _markets(market)
+    if len(mkts) != 1:
+        console.print("[red]Escolha um único mercado para o backtest.[/red]")
+        raise typer.Exit(code=1)
+    mkt = mkts[0]
+    result, path = _protocol_run(cfg, strategy, mkt, start, end, cross, quick, out)
+
+    m = result.metrics_test
+    table = Table(title=f"{strategy}/{mkt} — teste OOS ({result.split.test})")
+    table.add_column("Métrica")
+    table.add_column("Valor", justify="right")
+    for k, val in (
+        ("Sharpe", f"{m.sharpe:.2f}"),
+        ("CAGR", f"{m.cagr:.1%}"),
+        ("Max DD", f"{m.max_drawdown:.1%}"),
+        ("Profit factor", f"{m.profit_factor:.2f}"),
+        ("Trades", str(m.n_trades)),
+        ("Exposição média", f"{m.exposure_avg:.1%}"),
+        ("Permanência média (pregões)", f"{m.avg_hold_bars:.1f}"),
+        ("Platô", f"{result.plateau:.2f}"),
+        ("Eficiência WF", f"{result.walk_forward.efficiency:.2f}"),
+        ("DD p95 em 1 ano", f"{result.dd_bootstrap.get('mdd_p95', float('nan')):.1%}"),
+        (
+            "DD p95 horizonte completo",
+            f"{result.dd_bootstrap_full.get('mdd_p95', float('nan')):.1%}",
+        ),
+    ):
+        table.add_row(k, val)
+    console.print(table)
+    for k, ok in result.checklist.items():
+        console.print(f"  {'[green]OK[/green]' if ok else '[red]X [/red]'} {k}")
+    verdict = "[green]APROVADA[/green]" if result.approved else "[red]REPROVADA[/red]"
+    console.print(f"\nVeredito: {verdict} — relatório em {path}")
+    raise typer.Exit(code=0 if result.approved else 3)
+
+
+@app.command()
+def bench(
+    strategies: Annotated[
+        str, typer.Option("--strategies", "-s", help="Lista separada por vírgula, ou 'all'")
+    ] = "all",
+    market: MarketOpt = "all",
+    start: Annotated[str | None, typer.Option(help="Data inicial (YYYY-MM-DD)")] = None,
+    end: Annotated[str | None, typer.Option(help="Data final (YYYY-MM-DD)")] = None,
+    cross: Annotated[
+        bool, typer.Option("--cross/--no-cross", help="Valida no outro mercado")
+    ] = False,
+    quick: Annotated[
+        bool, typer.Option("--quick/--no-quick", help="Menos simulações MC/bootstrap")
+    ] = True,
+    out: Annotated[Path, typer.Option(help="Pasta de relatórios")] = Path("reports"),
+    config: ConfigOpt = DEFAULT_CONFIG_PATH,
+) -> None:
+    """Roda o protocolo para várias estratégias/mercados de uma vez e compara os resultados.
+
+    Cada combinação gera o mesmo run e o mesmo relatório que o comando `backtest` — a diferença
+    é a fila e a tabela comparativa no fim. Como demora, o padrão aqui é `--quick` (menos
+    simulações de Monte Carlo/bootstrap); para a decisão final, rode com `--no-quick`.
+    O detalhe por ação fica no dashboard, página **Backtests**.
+    """
+    cfg = load_config(config)
+    names = (
+        [n for n, v in cfg.strategies.items() if v.get("enabled")]
+        if strategies == "all"
+        else [s.strip() for s in strategies.split(",") if s.strip()]
+    )
+    unknown = [n for n in names if n not in cfg.strategies]
+    if unknown:
+        console.print(f"[red]Estratégia não configurada em config.yaml:[/red] {', '.join(unknown)}")
+        raise typer.Exit(code=1)
+    if not names:
+        console.print("[red]Nenhuma estratégia habilitada — use --strategies.[/red]")
+        raise typer.Exit(code=1)
+
+    combos = [(n, m) for m in _markets(market) for n in names]
+    console.print(f"Fila: {len(combos)} backtest(s) — {', '.join(f'{n}/{m}' for n, m in combos)}")
+    rows: list[tuple[str, ProtocolResult | None, str]] = []
+    for i, (name, mkt) in enumerate(combos, start=1):
+        console.rule(f"[{i}/{len(combos)}] {name}/{mkt}")
+        try:
+            result, _ = _protocol_run(cfg, name, mkt, start, end, cross, quick, out)
+            rows.append((f"{name}/{mkt}", result, ""))
+        except Exception as exc:  # uma combinação sem dados não pode derrubar a fila inteira
+            console.print(f"[red]Falhou:[/red] {exc}")
+            rows.append((f"{name}/{mkt}", None, str(exc)[:60]))
+
+    table = Table(title="Comparação — teste OOS")
+    # sem largura mínima o rich corta justamente o que identifica a linha ("momentum…")
+    table.add_column("Estratégia", min_width=max(len(label) for label, _, _ in rows))
+    for col in ("Veredito", "Sharpe", "CAGR", "Max DD", "DD p95 1a", "Trades", "Perm."):
+        table.add_column(col, justify="right")
+    for label, done, err in sorted(
+        rows, key=lambda r: -(r[1].metrics_test.sharpe if r[1] is not None else float("-inf"))
+    ):
+        if done is None:
+            table.add_row(label, f"[red]erro[/red] {err}", "-", "-", "-", "-", "-", "-")
+            continue
+        m = done.metrics_test
+        table.add_row(
+            label,
+            "[green]APROVADA[/green]" if done.approved else "[red]REPROVADA[/red]",
+            f"{m.sharpe:.2f}",
+            f"{m.cagr:.1%}",
+            f"{m.max_drawdown:.1%}",
+            f"{done.dd_bootstrap.get('mdd_p95', float('nan')):.1%}",
+            str(m.n_trades),
+            f"{m.avg_hold_bars:.0f}",
+        )
+    console.print(table)
+    if quick or not cross:
+        atalhos = [
+            x
+            for x in (
+                "menos simulações (--quick)" if quick else "",
+                "sem validação cruzada (--no-cross)" if not cross else "",
+            )
+            if x
+        ]
+        console.print(
+            f"[yellow]Triagem[/yellow]: rodada com {' e '.join(atalhos)} — o veredito aqui é "
+            "indicativo. Antes de adotar, refaça com `backtest --no-quick --cross`."
+        )
+    console.print("\nResultado por ação: `swing-quant dashboard` → página [bold]Backtests[/bold].")
+
+
+def _protocol_run(
+    cfg: Config,
+    strategy: str,
+    mkt: Market,
+    start: str | None,
+    end: str | None,
+    cross: bool,
+    quick: bool,
+    out: Path,
+) -> tuple[ProtocolResult, Path]:
+    """Protocolo completo (docs/04) de uma estratégia num mercado: roda, salva e registra.
+
+    Compartilhado por `backtest` (uma combinação) e `bench` (uma fila delas), para que os dois
+    produzam exatamente o mesmo run — custos, risco e painel montados do mesmo jeito.
+    """
     from swing_quant.backtest.engine import CostModel, RiskModel
     from swing_quant.backtest.protocol import run_protocol
     from swing_quant.backtest.report import save_report
@@ -274,15 +448,9 @@ def backtest(
     from swing_quant.data.universe import INDEX_BY_MARKET, to_yf_symbol
     from swing_quant.strategies import make_strategy
 
-    cfg = load_config(config)
     if strategy not in cfg.strategies:
         console.print(f"[red]Estratégia não configurada em config.yaml:[/red] {strategy}")
         raise typer.Exit(code=1)
-    mkts = _markets(market)
-    if len(mkts) != 1:
-        console.print("[red]Escolha um único mercado para o backtest.[/red]")
-        raise typer.Exit(code=1)
-    mkt = mkts[0]
     other: Market = "us" if mkt == "b3" else "b3"
     strat = make_strategy(strategy, cfg.strategies[strategy])
 
@@ -310,8 +478,10 @@ def backtest(
 
         console.print(f"Carregando preços {mkt.upper()}…")
         prices = load(mkt)
-        bench = store.get_prices([cfg.market_universe(mkt).benchmark], start=start, end=end)
-        bench_close = bench.set_index("date")["adj_close"] if not bench.empty else None
+        bench_prices = store.get_prices([cfg.market_universe(mkt).benchmark], start=start, end=end)
+        bench_close = (
+            bench_prices.set_index("date")["adj_close"] if not bench_prices.empty else None
+        )
         cross_factory = None
         if cross:
             console.print(f"Carregando preços {other.upper()} (mercado cruzado)…")
@@ -341,33 +511,7 @@ def backtest(
             min_trades_select=v.min_test_trades,
         )
         path = save_report(result, out, store)
-
-    m = result.metrics_test
-    table = Table(title=f"{strategy}/{mkt} — teste OOS ({result.split.test})")
-    table.add_column("Métrica")
-    table.add_column("Valor", justify="right")
-    for k, val in (
-        ("Sharpe", f"{m.sharpe:.2f}"),
-        ("CAGR", f"{m.cagr:.1%}"),
-        ("Max DD", f"{m.max_drawdown:.1%}"),
-        ("Profit factor", f"{m.profit_factor:.2f}"),
-        ("Trades", str(m.n_trades)),
-        ("Exposição média", f"{m.exposure_avg:.1%}"),
-        ("Platô", f"{result.plateau:.2f}"),
-        ("Eficiência WF", f"{result.walk_forward.efficiency:.2f}"),
-        ("DD p95 em 1 ano", f"{result.dd_bootstrap.get('mdd_p95', float('nan')):.1%}"),
-        (
-            "DD p95 horizonte completo",
-            f"{result.dd_bootstrap_full.get('mdd_p95', float('nan')):.1%}",
-        ),
-    ):
-        table.add_row(k, val)
-    console.print(table)
-    for k, ok in result.checklist.items():
-        console.print(f"  {'[green]OK[/green]' if ok else '[red]X [/red]'} {k}")
-    verdict = "[green]APROVADA[/green]" if result.approved else "[red]REPROVADA[/red]"
-    console.print(f"\nVeredito: {verdict} — relatório em {path}")
-    raise typer.Exit(code=0 if result.approved else 3)
+    return result, path
 
 
 @app.command()

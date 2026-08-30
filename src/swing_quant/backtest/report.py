@@ -82,6 +82,8 @@ def render_markdown(r: ProtocolResult, plots: dict[str, Path] | None = None) -> 
         "",
         f"**Status**: {status}  ",
         f"**Parâmetros escolhidos (treino)**: `{r.params}`  ",
+        "**Timeframe**: candles diários (D1) — sinal no fechamento, execução na abertura do "
+        "pregão seguinte; `bars_held` e `max_hold` contam pregões  ",
         f"**Gerado em**: {dt.datetime.now():%Y-%m-%d %H:%M}",
         "",
         "## Checklist de aprovação",

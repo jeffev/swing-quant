@@ -77,6 +77,14 @@ CREATE TABLE IF NOT EXISTS executions (
   fees        DOUBLE DEFAULT 0
 );
 
+CREATE TABLE IF NOT EXISTS risk_free (
+  market       VARCHAR NOT NULL,
+  date         DATE    NOT NULL,
+  daily_return DOUBLE  NOT NULL,
+  source       VARCHAR,
+  PRIMARY KEY (market, date)
+);
+
 CREATE TABLE IF NOT EXISTS backtest_runs (
   run_id       VARCHAR PRIMARY KEY,
   strategy     VARCHAR NOT NULL,

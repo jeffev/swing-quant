@@ -78,6 +78,12 @@ data = load(market, lookback_days)
 prices, signals, executions = data["prices"], data["signals"], data["executions"]
 
 st.title(f"📈 Swing Quant — {market.upper()}")
+st.caption(
+    "Esta página é o **acompanhamento do que está valendo**: sinais do screener, posições "
+    "abertas e desempenho realizado — fica vazia enquanto não houver execuções no journal. "
+    "Para explorar backtests e o resultado ação por ação, abra a página **Backtests** na "
+    "barra lateral."
+)
 
 # ---------------------------------------------------------------- sinais do dia
 st.header("Sinais mais recentes")

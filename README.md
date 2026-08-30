@@ -43,11 +43,17 @@ uv run swing-quant update-data --market all     # universo + OHLCV incremental +
 uv run swing-quant update-data -m b3 --full     # refaz o histórico (recalcula adj_close)
 uv run swing-quant quality -m us                # só a validação sobre o que já está no banco
 uv run swing-quant verify-cotahist --year 2025  # compara fechamentos com o arquivo oficial da B3
+uv run swing-quant update-riskfree -m all        # CDI (BCB) e T-bills EUA (BIL): baseline das comparações
 
 # backtest (Fase 2) — protocolo completo: grid, platô, walk-forward, teste OOS, MC, bootstrap,
 # custos 0-3x, baseline aleatória, mercado cruzado -> reports/<estrategia>_<mercado>_<data>.md
 uv run swing-quant backtest --strategy rsi2 -m b3
 uv run swing-quant backtest --strategy rsi2 -m us --quick --no-cross   # mais rápido
+
+# vários de uma vez: fila de combinações estratégia x mercado + tabela comparativa no fim.
+# O padrão é --quick/--no-cross (triagem); para decidir de verdade, refaça com `backtest`.
+uv run swing-quant bench -s donchian,momentum -m all
+uv run swing-quant bench                                # todas as estratégias habilitadas
 
 # carteira combinada (Fase 3): estratégias habilitadas + regime + regras de risco, com ablação
 uv run swing-quant portfolio -m b3
@@ -65,6 +71,9 @@ uv run swing-quant health -m b3                      # saúde por estratégia (m
 uv run swing-quant health -m b3 --resume donchian    # reativação manual
 uv run swing-quant monthly-report -m b3 --month 2026-08
 uv sync --extra dashboard && uv run swing-quant dashboard   # Streamlit local
+# duas páginas: "app" (o que está valendo: sinais, posições, realizado) e "Backtests"
+# (compara os runs registrados, retorno por ano x índice x renda fixa, e o resultado ação
+# por ação com os trades de cada uma)
 ```
 
 Produção automática: `.github/workflows/daily.yml` (seg–sex 19:30 BRT: dados + screener;
