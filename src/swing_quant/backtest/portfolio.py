@@ -42,6 +42,7 @@ def combine_panels(panels: Mapping[str, Panel], sectors: Mapping[str, str] | Non
             "entry",
             "exit",
             "stop",
+            "target",
             "score",
             "max_hold",
         )
@@ -69,6 +70,7 @@ def combine_panels(panels: Mapping[str, Panel], sectors: Mapping[str, str] | Non
         entry=cat("entry").fillna(False).astype(bool),
         exit=cat("exit").fillna(False).astype(bool),
         stop=cat("stop"),
+        target=cat("target"),
         score=cat("score"),
         max_hold=cat("max_hold").fillna(0).astype(int),
         meta={"strategies": list(panels), "n_columns": len(cols)},

@@ -53,6 +53,9 @@ class Panel:
     stop: pd.DataFrame
     score: pd.DataFrame
     max_hold: pd.DataFrame
+    #: preço-alvo de cada entrada (NaN = sem alvo). Vazio vira um frame de NaN com a forma
+    #: do `close`, para que estratégias e painéis anteriores ao alvo continuem válidos.
+    target: pd.DataFrame = field(default_factory=pd.DataFrame)
     meta: dict[str, object] = field(default_factory=dict)
     #: ticker subjacente de cada coluna (== tickers num painel simples; "PETR4.SA" para
     #: a coluna "PETR4.SA@rsi2" num painel combinado). Uma posição por subjacente.
@@ -63,6 +66,8 @@ class Panel:
     sectors: dict[str, str] = field(default_factory=dict)
 
     def __post_init__(self) -> None:
+        if self.target.empty:
+            self.target = pd.DataFrame(np.nan, index=self.close.index, columns=self.close.columns)
         if not self.underlying:
             self.underlying = list(self.tickers)
         if not self.strategy_of:
@@ -87,6 +92,7 @@ class Panel:
             entry=self.entry.loc[idx],
             exit=self.exit.loc[idx],
             stop=self.stop.loc[idx],
+            target=self.target.loc[idx],
             score=self.score.loc[idx],
             max_hold=self.max_hold.loc[idx],
             meta=dict(self.meta),
@@ -126,6 +132,7 @@ def build_panel(
             "entry": sig["entry"],
             "exit": sig["exit"],
             "stop": sig["stop"],
+            "target": sig["target"],
             "score": sig["score"],
             "max_hold": sig["max_hold"],
         }
@@ -153,6 +160,7 @@ def build_panel(
         entry=entry,
         exit=exit_,
         stop=wide("stop"),
+        target=wide("target"),
         score=wide("score"),
         max_hold=max_hold,
         meta={"strategy": repr(strategy), "n_tickers": len(tickers)},

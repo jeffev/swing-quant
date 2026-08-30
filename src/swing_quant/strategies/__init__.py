@@ -6,6 +6,7 @@ from collections.abc import Mapping
 from typing import Any
 
 from swing_quant.strategies.base import SIGNAL_COLUMNS, Strategy, StrategyParams, validate_signals
+from swing_quant.strategies.dip import Dip
 from swing_quant.strategies.donchian import Donchian
 from swing_quant.strategies.drops_ibs import DropsIBS
 from swing_quant.strategies.momentum import Momentum
@@ -15,6 +16,7 @@ from swing_quant.strategies.rsi2 import RSI2
 REGISTRY: dict[str, type[Strategy]] = {
     RSI2.name: RSI2,
     Donchian.name: Donchian,
+    Dip.name: Dip,
     DropsIBS.name: DropsIBS,
     Momentum.name: Momentum,
     Pullback.name: Pullback,
@@ -35,6 +37,7 @@ __all__ = [
     "REGISTRY",
     "RSI2",
     "SIGNAL_COLUMNS",
+    "Dip",
     "Donchian",
     "DropsIBS",
     "Momentum",

@@ -6,6 +6,8 @@ indexado por data) e devolve um DataFrame alinhado com as colunas de `SIGNAL_COL
 - entry    (bool)  sinal de compra calculado no fechamento do dia (executa em D+1)
 - exit     (bool)  sinal de saída calculado no fechamento do dia (executa em D+1)
 - stop     (float) preço de stop inicial para a entrada gerada neste dia (NaN = sem stop)
+- target   (float) preço-alvo da entrada gerada neste dia (NaN = sem alvo); realizado
+            intradiário, como o stop
 - score    (float) prioridade para o screener/engine quando há mais sinais que vagas
 - max_hold (int)   nº máximo de pregões em posição (stop por tempo); 0 = sem limite
 
@@ -23,7 +25,7 @@ import numpy as np
 import pandas as pd
 from pydantic import BaseModel, ConfigDict
 
-SIGNAL_COLUMNS: tuple[str, ...] = ("entry", "exit", "stop", "score", "max_hold")
+SIGNAL_COLUMNS: tuple[str, ...] = ("entry", "exit", "stop", "target", "score", "max_hold")
 OHLCV_COLUMNS: tuple[str, ...] = ("open", "high", "low", "close", "volume")
 
 
@@ -84,6 +86,7 @@ class Strategy(ABC):
                 "entry": np.zeros(len(index), dtype=bool),
                 "exit": np.zeros(len(index), dtype=bool),
                 "stop": np.full(len(index), np.nan),
+                "target": np.full(len(index), np.nan),
                 "score": np.full(len(index), np.nan),
                 "max_hold": np.zeros(len(index), dtype=int),
             },
@@ -102,6 +105,7 @@ def validate_signals(sig: pd.DataFrame, index: pd.Index) -> pd.DataFrame:
     out["entry"] = out["entry"].fillna(False).astype(bool)
     out["exit"] = out["exit"].fillna(False).astype(bool)
     out["stop"] = out["stop"].astype(float)
+    out["target"] = out["target"].astype(float)
     out["score"] = out["score"].astype(float)
     out["max_hold"] = out["max_hold"].fillna(0).astype(int)
     return out

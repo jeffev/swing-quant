@@ -85,6 +85,7 @@ class Position:
     stop: float
     max_hold: int
     score: float
+    target: float = float("nan")
     bars_held: int = 0
 
 
@@ -168,6 +169,7 @@ class Backtester:
         n_days = len(dates)
         # arrays numpy para velocidade
         opn = panel.open.to_numpy(dtype=float)
+        high = panel.high.to_numpy(dtype=float)
         low = panel.low.to_numpy(dtype=float)
         close = panel.close.to_numpy(dtype=float)
         atr_arr = panel.atr.to_numpy(dtype=float)
@@ -175,6 +177,7 @@ class Backtester:
         entry = panel.entry.to_numpy(dtype=bool)
         exit_sig = panel.exit.to_numpy(dtype=bool)
         stop_arr = panel.stop.to_numpy(dtype=float)
+        target_arr = panel.target.to_numpy(dtype=float)
         score = panel.score.to_numpy(dtype=float)
         max_hold = panel.max_hold.to_numpy(dtype=int)
         log_ret: np.ndarray | None = None
@@ -302,20 +305,32 @@ class Backtester:
                     entry_price=fill,
                     entry_fees=fees,
                     stop=stop_arr[d - 1, j],
+                    target=target_arr[d - 1, j],
                     max_hold=int(max_hold[d - 1, j]),
                     score=float(score[d - 1, j]),
                 )
                 held_underlying.add(underlying[j])
             pending_entries = []
 
-            # ---------------------------------------------------------- 3) stops intradiários
+            # ------------------------------------------------- 3) stops e alvos intradiários
+            # Quando a barra toca os dois, assume-se o stop: sem intradiário não dá para saber
+            # a ordem, e o pessimista é o único que não infla resultado.
             for j in list(positions):
                 pos = positions[j]
-                if math.isnan(pos.stop) or math.isnan(low[d, j]):
-                    continue
-                if low[d, j] <= pos.stop:
+                if not math.isnan(pos.stop) and not math.isnan(low[d, j]) and low[d, j] <= pos.stop:
                     px = min(pos.stop, opn[d, j]) if not math.isnan(opn[d, j]) else pos.stop
                     cash += self._close_position(pos, date, px, "stop", trades)
+                    del positions[j]
+                    held_underlying.discard(pos.underlying)
+                    continue
+                if (
+                    not math.isnan(pos.target)
+                    and not math.isnan(high[d, j])
+                    and high[d, j] >= pos.target
+                ):
+                    # gap de abertura acima do alvo executa na abertura, não no alvo
+                    px = max(pos.target, opn[d, j]) if not math.isnan(opn[d, j]) else pos.target
+                    cash += self._close_position(pos, date, px, "target", trades)
                     del positions[j]
                     held_underlying.discard(pos.underlying)
 

@@ -16,6 +16,8 @@ def _panel(
     stop: dict[str, list[float]] | None = None,
     max_hold: int = 0,
     lows: dict[str, list[float]] | None = None,
+    highs: dict[str, list[float]] | None = None,
+    target: dict[str, list[float]] | None = None,
     scores: dict[str, list[float]] | None = None,
 ) -> Panel:
     n = len(next(iter(opens.values())))
@@ -27,11 +29,12 @@ def _panel(
     opn = wide(opens, np.nan)
     close = opn.copy()  # fechamento = abertura (sem variação intradiária, simplifica contas)
     low = wide(lows, np.nan) if lows else close.copy()
+    high = wide(highs, np.nan) if highs else close.copy()
     return Panel(
         dates=idx,
         tickers=tickers,
         open=opn,
-        high=close.copy(),
+        high=high,
         low=low,
         close=close,
         atr=pd.DataFrame(1.0, index=idx, columns=tickers),
@@ -39,6 +42,7 @@ def _panel(
         entry=wide(entry, False, bool),
         exit=wide(exit_ or {}, False, bool),
         stop=wide(stop or {}, np.nan),
+        target=wide(target or {}, np.nan),
         score=wide(scores or {}, 1.0),
         max_hold=pd.DataFrame(max_hold, index=idx, columns=tickers, dtype=int),
     )
@@ -193,3 +197,48 @@ def test_equity_and_cash_consistency() -> None:
     assert res.exposure.iloc[1] == pytest.approx(5000 / 100_000)
     assert res.exposure.iloc[-1] == 0.0
     assert res.equity.iloc[-1] == pytest.approx(res.cash.iloc[-1])
+
+
+def test_price_target_intraday_and_gap() -> None:
+    # alvo em 11: D2 a máxima de A toca 11.2 -> sai a 11; B abre em 12 -> gap paga melhor
+    p = _panel(
+        ["A", "B"],
+        opens={"A": [10.0, 10.0, 10.0, 10.0], "B": [10.0, 10.0, 12.0, 10.0]},
+        highs={"A": [10.0, 10.0, 11.2, 10.0], "B": [10.0, 10.0, 12.0, 10.0]},
+        entry={"A": [True, False, False, False], "B": [True, False, False, False]},
+        target={"A": [11.0] * 4, "B": [11.0] * 4},
+    )
+    res = Backtester(NO_COST, RISK).run(p)
+    t = res.trades.set_index("ticker")
+    assert t.loc["A", "exit_price"] == 11.0 and t.loc["A", "exit_reason"] == "target"
+    assert t.loc["B", "exit_price"] == 12.0  # gap: executa na abertura, melhor que o alvo
+    assert (t["exit_date"] == p.dates[2]).all()
+
+
+def test_stop_wins_when_the_same_bar_touches_stop_and_target() -> None:
+    """Sem intradiário não dá para saber a ordem; o engine assume o pior caso."""
+    p = _panel(
+        ["A"],
+        opens={"A": [10.0, 10.0, 10.0, 10.0]},
+        highs={"A": [10.0, 10.0, 11.5, 10.0]},
+        lows={"A": [10.0, 10.0, 9.0, 10.0]},
+        entry={"A": [True, False, False, False]},
+        stop={"A": [9.5] * 4},
+        target={"A": [11.0] * 4},
+    )
+    res = Backtester(NO_COST, RISK).run(p)
+    assert res.trades["exit_reason"].tolist() == ["stop"]
+    assert res.trades["exit_price"].tolist() == [9.5]
+
+
+def test_no_target_keeps_the_old_behaviour() -> None:
+    """Painel sem alvo (o caso de todas as estratégias anteriores) não fecha por alvo."""
+    p = _panel(
+        ["A"],
+        opens={"A": [10.0, 10.0, 20.0, 10.0]},
+        highs={"A": [10.0, 10.0, 50.0, 10.0]},
+        entry={"A": [True, False, False, False]},
+        exit_={"A": [False, False, True, False]},
+    )
+    res = Backtester(NO_COST, RISK).run(p)
+    assert res.trades["exit_reason"].tolist() == ["signal"]

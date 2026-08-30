@@ -213,6 +213,30 @@ sleeve maior. Registrado em Q11.
 por mercado. O próximo ganho de diversificação real seria uma estratégia de perfil diferente
 (mean reversion **longa**, ex.: 3–5 dias com filtro de tendência, que ainda não foi testada).
 
+## ADR-019 — Alvo de preço (`target`) no contrato de sinais
+
+**Contexto**: até aqui uma posição só fechava por sinal booleano, stop ou tempo. Alvo como
+"+Y% sobre a entrada" não cabia nesse contrato: `exit` é uma condição por barra, calculada sem
+saber a que preço a posição foi aberta. A Pullback contornou isso usando um alvo que é uma
+série de preço (máxima de N dias), mas um alvo percentual não tem como ser expresso assim.
+
+**Decisão**: `target` vira a sexta coluna de `SIGNAL_COLUMNS`, simétrica ao `stop` — um preço
+absoluto calculado no dia do sinal, NaN quando a estratégia não usa alvo. O engine passa a
+checá-lo intradiário junto com o stop, com a mesma regra de gap (abertura acima do alvo executa
+na abertura, a favor). **Quando a mesma barra toca stop e alvo, assume-se o stop**: sem dado
+intradiário não há como saber a ordem, e o pessimista é o único que não infla o resultado.
+`exit_reason` ganha o valor `target`.
+
+**Consequências**: painéis e estratégias anteriores continuam válidos — `Panel.target` é
+opcional e vira um frame de NaN quando ausente, e `empty_signals` já devolve a coluna. O alvo é
+medido sobre o **fechamento do dia do sinal**, não sobre o preço de execução; num gap de
+abertura o ganho realizado difere do `target_pct` nominal, para os dois lados.
+
+**Pendência**: a produção ainda não carrega o alvo. A tabela `signals` do journal tem
+`stop_price` e não `target_price`, e acrescentar coluna exige migrar o banco que vive no cache
+do Actions. Fica para quando (e se) uma estratégia com alvo for aprovada — hoje a única é a
+`dip`, com `enabled: false`.
+
 ## ADR-017 — Gate de drawdown: bootstrap em blocos dos retornos diários, horizonte de 1 ano
 **Data**: 28/08/2026
 **Contexto**: Q10. Donchian-B3 e Momentum-EUA passavam 9 dos 10 critérios e reprovavam sempre no
@@ -303,6 +327,8 @@ e a maioria dos papéis do S&P 500 exige fracionário.
 | ~~Q10~~ | ~~MC p95 por embaralhamento de trades é pessimista?~~ | **Resolvida em ADR-017: bootstrap em blocos dos retornos diários, horizonte de 1 ano.** O diagnóstico virou: o problema não era pessimismo, era horizonte indefinido | — |
 | Q11 | Capital da sleeve EUA — a 0,35%/trade (ADR-018) o risco é US$ 70 por posição, papéis de US$ 300–500 exigem fracionário | fracionário (corretoras EUA permitem) vs sleeve maior vs universo de preço menor | Antes de executar de verdade |
 | Q12 | Reavaliar o bootstrap do Sharpe do Donchian: IC [0,03; 2,44] exclui zero por muito pouco, com 147 trades OOS | acumular OOS real (paper trading) vs aceitar como está | Após ~6 meses de paper trading |
+| Q13 | Dip/EUA para 9/10 no profit factor por 0,009 (1,391 vs 1,40). O gate de PF ≥ 1,4 faz sentido para uma estratégia de alvo fixo, com 21% de exposição e DD p95 1a de −9,6%? | manter o gate e descartar vs revisar o critério **por princípio** (como o ADR-017 fez com o de drawdown) vs avaliar a dip só como perna de carteira, junto do momentum (**testado em 29/08: inconclusivo — a carteira `momentum+dip` piorou o Sharpe, mas por causa da régua de ranking, ver Q14**) | Antes de qualquer novo run da dip |
+| Q14 | Carteira multi-estratégia ordena candidatos por `score` **bruto** (`risk/sizing.py:rank_key`), mas cada estratégia produz score em escala própria — momentum (retorno 12-1) tem mediana 1,09 e máximo 15,0; dip (profundidade da queda) tem mediana 0,53 e teto ~0,9. Com vagas fixas (`max_positions: 6`), a de número maior monopoliza a carteira: em `momentum+dip` (29/08) a dip levou 234 trades e o momentum perdeu 246 — substituição, não diversificação, e o Sharpe caiu de 1,14 para 1,10 | normalizar o score dentro de cada estratégia (percentil ou z-score da própria distribuição) vs manter bruto e aceitar que carteira multi-estratégia só funciona com scores de escala parecida | Antes de qualquer carteira com 2+ estratégias de perfis diferentes |
 
 ---
 
@@ -321,3 +347,5 @@ e a maioria dos papéis do S&P 500 exige fracionário.
 | Momentum — **cap 10%/posição** | EUA | 27/08/2026 | 1,20 | 1,84 | 1,91 | 3842 (859 OOS) | Idêntica (exposição 44%→41%): o cap não era o limitante, é o risco por ATR. MC p95 −32,5% vs MDD realizado −21%. **Adotada como sleeve EUA em paper trading** (ADR-016); MC por embaralhamento questionado em Q10 | `reports/momentum_us_20260827_221456.md` |
 | **Donchian B1** (`entry=40, exit=10`) — gate do ADR-017 | B3 | 28/08/2026 | 0,68 | **1,25** | **2,08** | 637 (147 OOS) | ✅ **APROVADA 10/10** — o critério que faltava passou com o gate correto: DD p95 1a **−12,8%** (alvo −15%); realizado 1a p95 −10,0%. Baseline aleatória 0,12; IBOV Sharpe 0,36 / MDD −48,6% vs −12,8%. Ressalva: bootstrap IC [0,03; 2,44] passa raspando (Q12) | `reports/donchian_b3_20260828_224441.md` |
 | **Momentum** (`lookback=189, exit_sma=50`) — **risco 0,35%** (ADR-018) | EUA | 28/08/2026 | 1,20 | **1,85** | **1,98** | 3842 (859 OOS) | ✅ **APROVADA 10/10** — a 0,5% de risco reprovava só no DD (p95 1a −19,7%); a 0,35% dá **−14,2%** sem perder qualidade (Sharpe OOS 1,85, CAGR OOS 21,0%, MDD −11,9%). Bootstrap IC [0,69; 2,97]; baseline aleatória 0,97; SPY 0,86 / −33,7% | `reports/momentum_us_20260828_225140.md` |
+| **Dip A4** (`drop=20%, alvo=15%, topo 60d`, stop 2×ATR, sem filtro) | **EUA** | 29/08/2026 | 0,71 | **1,07** | 1,39 | 1407 (323 OOS) | **9/10 — reprovada só pelo profit factor (1,391 vs 1,40)**. Passa tudo o mais com o protocolo completo: WF 0,78, platô 0,70, bootstrap IC [0,09; 2,04] (P(Sharpe≤0)=1,9%), DD p95 1a −9,6% (o melhor de todas), 2× custos, cruzado B3 > 0. Exposição 21%, perm. 16d, 49% das saídas no alvo (+14,9%) contra 46% no stop (−11,6%). O treino **rejeitou** o filtro de tendência (escolheu `trend_sma=0`). Ver Q13 | `reports/dip_us_20260829_233532.md` |
+| Dip A4 (`drop=20%, alvo=15%`, `trend_sma=200` escolhido no treino) | B3 | 29/08/2026 | — | −0,18 | 0,90 | 149 OOS | **Reprovada** — 5/10. O filtro de tendência, que o treino da B3 escolheu, cortou os trades pela metade e piorou tudo (WF 0,09, platô 0,36). Sem filtro dá Sharpe 0,18 / PF 1,05: fraca dos dois jeitos. Mesmo padrão das outras de reversão na B3 | `reports/dip_b3_20260829_232939.md` |

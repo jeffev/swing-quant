@@ -37,6 +37,22 @@ devolvem colunas `entry`, `exit`, `stop`, `score`. O `score` é usado pelo scree
 | Stop | 2,5×ATR14 abaixo da entrada |
 | Score | (MMA20 − Close) / desvio-padrão |
 
+### A4. Queda desde a máxima (`dip`) — implementada 29/08/2026
+| Item | Regra |
+|---|---|
+| Filtro | `trend_sma > 0` → fechamento > MMA(trend_sma); `0` desliga (queda pura) |
+| Entrada | Fechamento ≤ `drop_pct` abaixo da **máxima de fechamento dos `lookback` pregões anteriores** |
+| Saída | Alvo `target_pct` **ou** stop **ou** `max_hold` — o que vier primeiro |
+| Stop | `stop_atr`×ATR14 abaixo do fechamento do dia do sinal |
+| Score | Profundidade da queda (o mais descontado entra primeiro) |
+
+Diferente da A2, que compra o tombo de 1–3 pregões: aqui o gatilho é a correção acumulada
+contra o topo recente, o que gera menos sinais e permanência maior. É a primeira estratégia com
+**alvo de preço** (ADR-019) — as anteriores só saíam por sinal, stop ou tempo.
+
+Padrões: `drop_pct=0,15`, `lookback=60`, `target_pct=0,10`, `stop_atr=2,0`, `max_hold=60`,
+`trend_sma=0`. Grid do protocolo: `drop_pct` × `target_pct`.
+
 ---
 
 ## B. Momentum / Trend-Following (médio prazo, 5–20 dias)
@@ -145,11 +161,15 @@ class Strategy(Protocol):
     def required_indicators(self) -> list[str]: ...
     def generate(self, df: pd.DataFrame) -> pd.DataFrame:
         """Recebe OHLCV + indicadores; devolve df com colunas:
-        entry (bool), exit (bool), stop (float | NaN), score (float), max_hold (int)."""
+        entry (bool), exit (bool), stop (float | NaN), target (float | NaN),
+        score (float), max_hold (int)."""
 ```
 
 Regras:
 - `generate` **não** pode olhar linhas futuras (usar apenas `shift()` para trás).
+- `stop` e `target` são **preços absolutos** calculados no dia do sinal — não sobre o preço
+  de execução, que só se conhece na abertura seguinte. Ambos são realizados intradiário;
+  quando a mesma barra toca os dois, o engine assume o stop (ADR-019).
 - Parâmetros vêm de `params`; nada hardcoded, para permitir grid/robustez.
 - Cada estratégia tem um teste unitário com um DataFrame sintético onde o sinal esperado é conhecido.
 

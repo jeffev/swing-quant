@@ -107,8 +107,8 @@ def test_build_panel_alignment_and_min_rows() -> None:
 
 
 # ---------------------------------------------------------------- Donchian / DropsIBS
-def test_registry_has_all_three() -> None:
-    assert set(REGISTRY) == {"rsi2", "donchian", "drops_ibs", "momentum", "pullback"}
+def test_registry_has_every_strategy() -> None:
+    assert set(REGISTRY) == {"rsi2", "donchian", "dip", "drops_ibs", "momentum", "pullback"}
 
 
 def test_donchian_breakout_logic() -> None:
@@ -208,12 +208,50 @@ def test_pullback_entry_requires_alignment_and_touch() -> None:
 
 
 def test_new_strategies_no_lookahead() -> None:
-    from swing_quant.strategies import Momentum, Pullback
+    from swing_quant.strategies import Dip, Momentum, Pullback
 
     df = _ohlcv(600, seed=4)
     df2 = df.copy()
     df2.iloc[450:, :4] *= 1.5
-    for strat in (Momentum({"trend_sma": 50}), Pullback({"slow_sma": 100})):
+    for strat in (Momentum({"trend_sma": 50}), Pullback({"slow_sma": 100}), Dip({"lookback": 40})):
         a = strat.generate(df).iloc[:450]
         b = strat.generate(df2).iloc[:450]
         pd.testing.assert_frame_equal(a, b)
+
+
+def test_dip_entry_after_drop_from_the_previous_high() -> None:
+    """Sobe até 14 e cai: só entra quando o fechamento está `drop_pct` abaixo do topo anterior."""
+    from swing_quant.strategies import Dip
+
+    subida = [10.0, 10.5, 11.0, 11.5, 12.0, 12.5, 13.0, 13.5, 14.0, 14.5]
+    close = [*subida, 12.0, 10.0, 10.5]
+    df = pd.DataFrame(
+        {
+            "open": close,
+            "high": [c * 1.01 for c in close],
+            "low": [c * 0.99 for c in close],
+            "close": close,
+            "volume": [1_000_000.0] * len(close),
+        },
+        index=pd.date_range("2024-01-01", periods=len(close), freq="B"),
+    )
+    params = {"drop_pct": 0.20, "lookback": 10, "target_pct": 0.10, "stop_atr": None}
+    sig = Dip(params).generate(df)
+
+    # topo dos 10 pregões anteriores = 14,5; quedas: -17,2% (i=10), -31,0% (i=11), -27,6% (i=12)
+    assert sig["entry"].tolist() == [False] * 11 + [True, True]
+    assert sig["target"].iloc[11] == pytest.approx(11.0)  # 10 * 1,10
+    assert sig["score"].iloc[11] == pytest.approx(1 - 10.0 / 14.5)
+    assert sig["score"].iloc[11] > sig["score"].iloc[12]  # queda mais funda entra primeiro
+    assert sig["stop"].isna().all()  # stop_atr=None desliga o stop
+
+
+def test_dip_trend_filter_only_buys_above_the_average() -> None:
+    from swing_quant.strategies import Dip
+
+    df = _ohlcv(400, seed=11)
+    sem = Dip({"drop_pct": 0.05, "lookback": 20, "trend_sma": 0}).generate(df)
+    com = Dip({"drop_pct": 0.05, "lookback": 20, "trend_sma": 200}).generate(df)
+    assert com["entry"].sum() <= sem["entry"].sum()
+    # o filtro só remove sinais, nunca cria
+    assert not (com["entry"] & ~sem["entry"]).any()

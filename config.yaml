@@ -102,6 +102,14 @@ strategies:
     exit_sma: 50
     max_hold: 63
     stop_atr: 3.0
+  dip:
+    enabled: false           # A3 — em validação (protocolo antes de habilitar)
+    drop_pct: 0.15           # entra a 15% ou mais abaixo do topo
+    lookback: 60             # topo de referência: máxima dos 60 pregões anteriores
+    target_pct: 0.10         # alvo: +10% sobre o fechamento do dia do sinal
+    stop_atr: 2.0
+    max_hold: 60
+    trend_sma: 0             # 0 = sem filtro de tendência
   pullback:
     enabled: false           # Fase 6 — em validação
     fast_sma: 20
