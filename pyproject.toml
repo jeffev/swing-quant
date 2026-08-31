@@ -26,6 +26,12 @@ dependencies = [
 dashboard = ["streamlit>=1.35", "plotly>=5.22"]
 
 [dependency-groups]
+research = [          # notebooks/ — o estudo swing vs investimentos
+    "matplotlib>=3.8",
+    "nbformat>=5.10",
+    "nbconvert>=7.16",
+    "ipykernel>=6.29",
+]
 dev = [
     "pytest>=8.2",
     "pytest-cov>=5.0",
