@@ -44,6 +44,8 @@ uv run swing-quant update-data -m b3 --full     # refaz o histórico (recalcula 
 uv run swing-quant quality -m us                # só a validação sobre o que já está no banco
 uv run swing-quant verify-cotahist --year 2025  # compara fechamentos com o arquivo oficial da B3
 uv run swing-quant update-riskfree -m all        # CDI (BCB) e T-bills EUA (BIL): baseline das comparações
+uv run swing-quant update-assets -m all          # proxies de classe de ativo: IFIX, ouro, dólar, bitcoin, ETFs
+uv run swing-quant update-macro                  # IPCA, poupança, IVG-R (imóveis), CPI e Tesouro Direto
 
 # backtest (Fase 2) — protocolo completo: grid, platô, walk-forward, teste OOS, MC, bootstrap,
 # custos 0-3x, baseline aleatória, mercado cruzado -> reports/<estrategia>_<mercado>_<data>.md

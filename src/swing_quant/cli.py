@@ -286,6 +286,116 @@ def update_riskfree(
             console.print(f"{RISK_FREE_LABEL[mkt]} ({mkt}): {n} dias gravados")
 
 
+@app.command("update-assets")
+def update_assets(
+    market: MarketOpt = "all",
+    full: Annotated[bool, typer.Option("--full", help="Rebaixa todo o histórico")] = False,
+    config: ConfigOpt = DEFAULT_CONFIG_PATH,
+) -> None:
+    """Baixa os proxies de classe de ativo (FIIs, ouro, dólar, bitcoin, ETFs de renda fixa).
+
+    Só alimenta as comparações entre classes de ativo — os proxies ficam fora da tabela
+    `universe`, então nenhum deles vira candidato a trade no screener ou no portfólio.
+    """
+    import datetime as dt
+
+    from swing_quant.data.assets import (
+        b3_index_symbols,
+        index_name_of,
+        proxies_for,
+        proxy_tickers,
+    )
+    from swing_quant.data.loader import update_prices
+    from swing_quant.data.store import MarketStore
+    from swing_quant.data.universe import fetch_b3_index_series
+
+    cfg = load_config(config)
+    today = dt.date.today()
+    start_year = pd.Timestamp(cfg.data.history_start).year
+    exit_code = 0
+    with MarketStore(cfg.data.db_path) as store:
+        for mkt in _markets(market):
+            tickers = proxy_tickers(mkt)
+            indices = b3_index_symbols(mkt)
+            n_proxies = len(proxies_for(mkt))
+            console.rule(
+                f"[bold]{mkt.upper()} — {n_proxies} classes, {len(tickers) + len(indices)} séries"
+            )
+            res = update_prices(store, tickers, cfg.data.history_start, full=full, as_of=today)
+            console.print(
+                f"Preços: {res.downloaded_rows} linhas, {res.tickers_updated} tickers atualizados, "
+                f"{res.up_to_date} já em dia, {len(res.tickers_failed)} falhas"
+            )
+            if res.tickers_failed:
+                console.print(f"[yellow]Falhas:[/yellow] {', '.join(res.tickers_failed[:20])}")
+                exit_code = 1
+
+            for symbol in indices:
+                name = index_name_of(symbol)
+                try:
+                    serie = fetch_b3_index_series(name, start_year, today.year)
+                except Exception as exc:
+                    console.print(f"[red]{name}: falhou[/red] — {exc}")
+                    exit_code = 1
+                    continue
+                n = store.upsert_prices(_index_as_prices(serie, symbol))
+                console.print(f"{name} ({symbol}): {n} pregões gravados")
+    raise typer.Exit(code=exit_code)
+
+
+def _index_as_prices(serie: pd.DataFrame, symbol: str) -> pd.DataFrame:
+    """Série de fechamento de índice no formato da tabela `prices`.
+
+    Um índice não tem OHLC nem volume; o fechamento preenche as quatro pontas para a linha ser
+    válida, e `adj_close` é o próprio fechamento porque o índice já é de retorno total.
+    """
+    close = serie["close"].astype(float)
+    return serie.assign(
+        ticker=symbol,
+        open=close,
+        high=close,
+        low=close,
+        close=close,
+        adj_close=close,
+        volume=0,
+        source="b3_index",
+    )
+
+
+@app.command("update-macro")
+def update_macro_cmd(
+    start: Annotated[str, typer.Option(help="Data inicial (YYYY-MM-DD)")] = "2010-01-01",
+    end: Annotated[str | None, typer.Option(help="Data final (YYYY-MM-DD)")] = None,
+    only: Annotated[
+        str | None, typer.Option(help="Séries separadas por vírgula (padrão: todas)")
+    ] = None,
+    config: ConfigOpt = DEFAULT_CONFIG_PATH,
+) -> None:
+    """Baixa IPCA, poupança, IVG-R (imóveis), CPI dos EUA e as curvas do Tesouro Direto."""
+    import datetime as dt
+
+    from swing_quant.data.macro import MACRO_CATALOG, update_macro
+    from swing_quant.data.store import MarketStore
+
+    cfg = load_config(config)
+    ini = dt.date.fromisoformat(start)
+    fim = dt.date.fromisoformat(end) if end else None
+    keys = [k.strip() for k in only.split(",")] if only else None
+    if keys and (bad := [k for k in keys if k not in MACRO_CATALOG]):
+        console.print(f"[red]Série desconhecida:[/red] {', '.join(bad)}")
+        raise typer.Exit(code=2)
+
+    with MarketStore(cfg.data.db_path) as store:
+        result = update_macro(store, ini, fim, only=keys)
+    for key, n in result.items():
+        label = MACRO_CATALOG[key].label
+        if n < 0:
+            console.print(f"[red]{label}: fonte falhou[/red]")
+        else:
+            console.print(f"{label} ({key}): {n} pontos gravados")
+    raise typer.Exit(code=1 if any(n < 0 for n in result.values()) else 0)
+
+
 @app.command()
 def backtest(
     strategy: Annotated[str, typer.Option(help="Nome da estratégia (ex.: rsi2)")],

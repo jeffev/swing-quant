@@ -15,6 +15,8 @@ from typing import Self
 import duckdb
 import pandas as pd
 
+MACRO_COLUMNS: tuple[str, ...] = ("series", "date", "value", "unit", "source")
+
 PRICE_COLUMNS: tuple[str, ...] = (
     "ticker",
     "date",
@@ -83,6 +85,15 @@ CREATE TABLE IF NOT EXISTS risk_free (
   daily_return DOUBLE  NOT NULL,
   source       VARCHAR,
   PRIMARY KEY (market, date)
+);
+
+CREATE TABLE IF NOT EXISTS macro (
+  series VARCHAR NOT NULL,
+  date   DATE    NOT NULL,
+  value  DOUBLE  NOT NULL,
+  unit   VARCHAR NOT NULL,
+  source VARCHAR,
+  PRIMARY KEY (series, date)
 );
 
 CREATE TABLE IF NOT EXISTS backtest_runs (
@@ -274,3 +285,38 @@ class MarketStore:
         self.con.execute("INSERT OR REPLACE INTO corporate_events SELECT * FROM _ev_in")
         self.con.unregister("_ev_in")
         return len(ev)
+
+    # ------------------------------------------------------------------ macro
+    def upsert_macro(self, df: pd.DataFrame) -> int:
+        """Insere/atualiza séries macro. Espera `MACRO_COLUMNS`. Retorna nº de linhas."""
+        if df.empty:
+            return 0
+        missing = set(MACRO_COLUMNS) - set(df.columns)
+        if missing:
+            raise ValueError(f"colunas ausentes em macro: {sorted(missing)}")
+        clean = df.loc[:, list(MACRO_COLUMNS)].copy()
+        clean["date"] = pd.to_datetime(clean["date"]).dt.date
+        clean = clean.dropna(subset=["value"]).drop_duplicates(
+            subset=["series", "date"], keep="last"
+        )
+        self.con.register("_macro_in", clean)
+        self.con.execute("INSERT OR REPLACE INTO macro SELECT * FROM _macro_in")
+        self.con.unregister("_macro_in")
+        return len(clean)
+
+    def macro(self, series: str) -> pd.Series:
+        """Série macro gravada, indexada por data. Vazia quando ainda não houve `update-macro`.
+
+        A unidade (`index`, `pct_month`, `daily_return`) está no catálogo de
+        `swing_quant.data.macro`, não no valor: quem lê precisa saber o que está lendo.
+        """
+        df = self.con.execute(
+            "SELECT date, value FROM macro WHERE series = ? ORDER BY date", [series]
+        ).df()
+        if df.empty:
+            return pd.Series(dtype=float)
+        return pd.Series(df["value"].to_numpy(), index=pd.DatetimeIndex(df["date"]), name=series)
+
+    def macro_series(self) -> list[str]:
+        rows = self.con.execute("SELECT DISTINCT series FROM macro ORDER BY series").fetchall()
+        return [str(r[0]) for r in rows]

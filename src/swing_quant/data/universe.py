@@ -21,7 +21,12 @@ _SP500_URL = "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies"
 _HEADERS = {"User-Agent": "Mozilla/5.0 (swing-quant; +https://github.com)"}
 
 INDEX_BY_MARKET: dict[Market, str] = {"b3": "IBRX100", "us": "SP500"}
-_B3_INDEX_CODES: dict[str, str] = {"IBRX100": "IBXX", "IBOV": "IBOV", "SMLL": "SMLL"}
+_B3_INDEX_CODES: dict[str, str] = {
+    "IBRX100": "IBXX",
+    "IBOV": "IBOV",
+    "SMLL": "SMLL",
+    "IFIX": "IFIX",
+}
 
 
 # --------------------------------------------------------------------------- símbolos
@@ -122,3 +127,58 @@ def fetch_index(market: Market) -> pd.DataFrame:
     if market == "b3":
         return fetch_b3_index("IBRX100")
     return fetch_sp500()
+
+
+# --------------------------------------------------------------------------- séries de índice
+_B3_STATS_URL = (
+    "https://sistemaswebb3-listados.b3.com.br/indexStatisticsProxy/IndexCall/GetPortfolioDay/{}"
+)
+
+
+def parse_b3_index_year(payload: dict[str, Any], year: int) -> pd.DataFrame:
+    """Transforma a matriz dia x mês da B3 numa série diária (colunas `date`, `close`)."""
+    rows = payload.get("results") or []
+    out: list[tuple[pd.Timestamp, float]] = []
+    for row in rows:
+        day = int(row.get("day", 0))
+        for month in range(1, 13):
+            raw = row.get(f"rateValue{month}")
+            if not raw:
+                continue
+            value = float(str(raw).replace(".", "").replace(",", "."))
+            try:
+                out.append((pd.Timestamp(year=year, month=month, day=day), value))
+            except ValueError:  # dia 31 em mês de 30: a B3 devolve a grade cheia
+                continue
+    if not out:
+        return pd.DataFrame(columns=["date", "close"])
+    df = pd.DataFrame(out, columns=["date", "close"]).sort_values("date")
+    return df.reset_index(drop=True)
+
+
+def fetch_b3_index_series(
+    index_name: str, start_year: int, end_year: int, timeout: float = 40.0
+) -> pd.DataFrame:
+    """Série diária de fechamento de um índice da B3 (IFIX, SMLL, IBOV...), ano a ano.
+
+    É a fonte certa para índices que o yfinance não tem — e, no caso do IFIX, a única correta:
+    reconstruir FIIs por cotação de fundos individuais erra os proventos (que são o retorno
+    quase inteiro da classe) e ainda carrega o viés de só enxergar quem sobreviveu.
+    """
+    code = _B3_INDEX_CODES.get(index_name, index_name)
+    frames: list[pd.DataFrame] = []
+    with httpx.Client(headers=_HEADERS, timeout=timeout, follow_redirects=True) as client:
+        for year in range(start_year, end_year + 1):
+            payload = _b3_payload_year(code, year)
+            resp = client.get(_B3_STATS_URL.format(payload))
+            resp.raise_for_status()
+            frames.append(parse_b3_index_year(resp.json(), year))
+    df = pd.concat(frames, ignore_index=True) if frames else pd.DataFrame(columns=["date", "close"])
+    if df.empty:
+        raise RuntimeError(f"B3 não devolveu série para {index_name} em {start_year}-{end_year}")
+    return df.dropna().drop_duplicates("date").sort_values("date").reset_index(drop=True)
+
+
+def _b3_payload_year(index_code: str, year: int) -> str:
+    body = {"language": "pt-br", "index": index_code, "year": str(year)}
+    return base64.b64encode(json.dumps(body).encode()).decode()
