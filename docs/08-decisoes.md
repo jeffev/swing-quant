@@ -311,6 +311,62 @@ e a maioria dos papéis do S&P 500 exige fracionário.
 
 ---
 
+## ADR-020 — Piso de renda fixa no Sharpe e caixa remunerado; gate de mesma exposição
+
+**Data**: 30/08/2026
+**Status**: aceita
+
+**Contexto**. Duas omissões que se anulavam parcialmente e, juntas, distorciam todo veredito:
+
+1. `metrics.py` tinha o parâmetro `rf_annual` desde a Fase 2, mas **nenhum dos 6 pontos de
+   chamada o passava**. Todo Sharpe do projeto — inclusive o gate `sharpe_oos >= 0,8` e a regra
+   de desligamento do `health` — era medido contra zero. A tabela `risk_free` existia e estava
+   preenchida (ADR do `data/riskfree.py` diz literalmente que serve para responder "a estratégia
+   rendeu mais do que deixar o dinheiro parado?"); ninguém a lia. Com o CDI a 9,8% no período,
+   isso é a diferença entre ganhar dinheiro e ganhar menos que o caixa.
+2. O engine deixava o caixa a 0%. Como a carteira fica ~70% em caixa, isso subestima o resultado
+   tanto quanto o item 1 o superestima.
+3. Nenhum dos 10 gates comparava com um passivo. O `benchmark_metrics` era calculado, aparecia no
+   relatório e **não era gate** — e mesmo ele é buy-and-hold cheio contra uma carteira ~30%
+   investida, o que mede o humor da bolsa no período, não as regras de entrada e saída
+   (`docs/07-armadilhas.md` §2 já listava "Ignorar exposição" como armadilha).
+
+**Decisão**.
+
+- `compute_metrics(..., rf=)` aceita a **série diária** de `risk_free` (ou uma taxa anual
+  escalar). Série, não média: o CDI foi de 2% a 14% no período, e uma média achata exatamente a
+  distinção que interessa. `Metrics` ganha `rf_cagr` e `excess_over_rf`.
+- `Backtester(..., cash_rate=)` remunera o caixa não investido, com os juros compondo e entrando
+  no patrimônio que o sizing do dia seguinte enxerga. **As duas mudanças andam juntas**: aplicar
+  só uma erra o resultado para um dos lados (Donchian/B3 no período completo — contra zero e
+  caixa a 0%: Sharpe +0,79; contra CDI e caixa a 0%: −0,64; contra CDI e caixa remunerado: +0,32).
+- Novo gate `cagr > carteira de mesma exposição`: `blended_benchmark()` monta `w` no índice e
+  `1−w` na renda fixa, rebalanceada por dia, com `w` = exposição média da própria estratégia.
+- `capital.cash_earns_risk_free` (padrão `true`) desliga tudo isso de volta ao comportamento
+  antigo, para reprodutibilidade dos relatórios anteriores.
+- O piso vem do `Backtester`, então desce sozinho para `grid_search`, `walk_forward`,
+  `cost_sensitivity` e `random_baseline` — a seleção de parâmetros passa a usar a mesma régua
+  dos gates.
+
+**Consequências**. **Donchian/B3 reprovou** (`reports/donchian_b3_20260830_222255.md`): o Sharpe
+OOS caiu de 1,36 para 0,71, abaixo do gate de 0,8. Não é que a estratégia tenha piorado — no
+período completo ela rende 12,2% contra 9,8% do CDI (**+2,5 pp**) e bate a carteira passiva de
+mesma exposição por **+3,2 pp ao ano** (12,2% contra 9,0%), passando no gate novo. O que mudou é
+que agora ela precisa pagar o custo de oportunidade, e o limiar de 0,8 foi calibrado quando esse
+custo era zero. **Momentum/EUA continua aprovada**, agora 11/11 — o T-bill a 1,3% quase não move
+a régua lá, o que é em si o achado: o mesmo sistema parece muito melhor ou muito pior conforme o
+juro do país.
+
+A mudança também quebrou a razão de platô, que compara Sharpes entre células da grade:
+subtrair o mesmo piso de todas encolhe o ótimo proporcionalmente mais que os vizinhos. No
+Donchian/B3 a razão caiu de 0,78 para 0,50 **com a grade idêntica** — mesma ordenação, mesmos
+parâmetros escolhidos (40/10), mesma superfície. Corrigido no mesmo dia (Q16): `plateau_ratio`
+usa `sharpe_raw`, sem piso, e a razão foi para **0,88**.
+
+Com o platô corrigido, o Donchian/B3 reprova em **um único critério**, o `sharpe_oos`. Ver Q15.
+
+---
+
 ## Questões abertas
 
 | # | Questão | Opções | Prazo para decidir |
@@ -329,6 +385,8 @@ e a maioria dos papéis do S&P 500 exige fracionário.
 | Q12 | Reavaliar o bootstrap do Sharpe do Donchian: IC [0,03; 2,44] exclui zero por muito pouco, com 147 trades OOS | acumular OOS real (paper trading) vs aceitar como está | Após ~6 meses de paper trading |
 | Q13 | Dip/EUA para 9/10 no profit factor por 0,009 (1,391 vs 1,40). O gate de PF ≥ 1,4 faz sentido para uma estratégia de alvo fixo, com 21% de exposição e DD p95 1a de −9,6%? | manter o gate e descartar vs revisar o critério **por princípio** (como o ADR-017 fez com o de drawdown) vs avaliar a dip só como perna de carteira, junto do momentum (**testado em 29/08: inconclusivo — a carteira `momentum+dip` piorou o Sharpe, mas por causa da régua de ranking, ver Q14**) | Antes de qualquer novo run da dip |
 | Q14 | Carteira multi-estratégia ordena candidatos por `score` **bruto** (`risk/sizing.py:rank_key`), mas cada estratégia produz score em escala própria — momentum (retorno 12-1) tem mediana 1,09 e máximo 15,0; dip (profundidade da queda) tem mediana 0,53 e teto ~0,9. Com vagas fixas (`max_positions: 6`), a de número maior monopoliza a carteira: em `momentum+dip` (29/08) a dip levou 234 trades e o momentum perdeu 246 — substituição, não diversificação, e o Sharpe caiu de 1,14 para 1,10 | normalizar o score dentro de cada estratégia (percentil ou z-score da própria distribuição) vs manter bruto e aceitar que carteira multi-estratégia só funciona com scores de escala parecida | Antes de qualquer carteira com 2+ estratégias de perfis diferentes |
+| Q15 | O gate `sharpe_oos >= 0,8` foi calibrado quando o Sharpe era contra zero. Com o piso do CDI (ADR-020) ele virou um limiar bem mais duro, e o Donchian/B3 reprova com 0,71 — mesmo rendendo +2,5 pp sobre o CDI e +3,2 pp sobre a carteira de mesma exposição | manter 0,8 e descartar o Donchian vs recalibrar o limiar **por princípio**, como o ADR-017 fez com o de drawdown vs trocar o gate de Sharpe por um gate de excesso sobre a carteira de mesma exposição, que já é o comparável certo | Antes de decidir o destino da sleeve B3 |
+| ~~Q16~~ | ~~Platô medindo a régua em vez da robustez~~ | **Resolvida em 30/08/2026**: `plateau_ratio` passou a usar `sharpe_raw` (sem piso). Robustez da superfície de parâmetros e atratividade econômica são perguntas diferentes — o piso fica nos gates. Donchian/B3 voltou de 0,50 para **0,88**, e o veredito dele passou a depender só da Q15 | — |
 
 ---
 

@@ -22,7 +22,12 @@ from typing import Any
 import pandas as pd
 
 from swing_quant.backtest.engine import Backtester, BacktestResult, CostModel, RiskModel
-from swing_quant.backtest.metrics import TRADING_DAYS, Metrics, benchmark_metrics
+from swing_quant.backtest.metrics import (
+    TRADING_DAYS,
+    Metrics,
+    benchmark_metrics,
+    blended_benchmark,
+)
 from swing_quant.backtest.validation import (
     PanelFactory,
     Split,
@@ -59,6 +64,11 @@ class ApprovalThresholds:
     o alvo de 15% comparável entre estratégias de giro diferente."""
     mc_mdd_p95_max: float = 0.15
     """Nível de ruína do Monte Carlo por embaralhamento de trades — informativo desde ADR-017."""
+    excess_over_blend_min: float = 0.0
+    """Gate de exposição (ADR-020): CAGR acima de uma carteira passiva com a **mesma exposição
+    média** (índice + renda fixa). Sem ele, uma carteira 28% investida é medida contra um índice
+    100% investido e o veredito acaba dizendo mais sobre a bolsa no período do que sobre as
+    regras. 0,0 = basta empatar."""
 
 
 @dataclass
@@ -75,6 +85,7 @@ class ProtocolResult:
     metrics_train: Metrics
     metrics_test: Metrics
     benchmark: dict[str, float]
+    blend: dict[str, float]
     monte_carlo: dict[str, float]
     dd_bootstrap: dict[str, float]
     dd_bootstrap_full: dict[str, float]
@@ -101,6 +112,7 @@ def approval_checklist(
     dd_boot: dict[str, float],
     cross: dict[str, float] | None,
     thr: ApprovalThresholds,
+    blend: dict[str, float] | None = None,
 ) -> dict[str, bool]:
     cost_row = costs[costs["cost_mult"] == thr.cost_mult_must_profit]
     profitable_2x = bool(not cost_row.empty and cost_row["total_return"].iloc[0] > 0)
@@ -119,6 +131,11 @@ def approval_checklist(
             dd_boot.get("mdd_p95", float("nan")) >= -thr.dd_p95_max
         ),
     }
+    if blend:
+        excess = r_full.cagr - blend.get("cagr", float("nan"))
+        checks[f"cagr > carteira {blend['weight']:.0%} indice + renda fixa"] = bool(
+            excess >= thr.excess_over_blend_min
+        )
     if cross is not None:
         checks[f"cross_market_sharpe > {thr.cross_market_sharpe_min}"] = bool(
             cross.get("sharpe", float("nan")) > thr.cross_market_sharpe_min
@@ -143,6 +160,7 @@ def run_protocol(
     boot_runs: int = 1000,
     baseline_runs: int = 30,
     benchmark_close: pd.Series | None = None,
+    rf_daily: pd.Series | None = None,
     cross_panel_factory: PanelFactory | None = None,
     cross_costs: CostModel | None = None,
     thresholds: ApprovalThresholds | None = None,
@@ -150,7 +168,7 @@ def run_protocol(
 ) -> ProtocolResult:
     thr = thresholds or ApprovalThresholds()
     grid = dict(grid if grid is not None else strategy.default_grid)
-    bt = Backtester(costs, risk)
+    bt = Backtester(costs, risk, cash_rate=rf_daily)
     notes: list[str] = []
 
     base_panel = make_panel(strategy)
@@ -201,7 +219,7 @@ def run_protocol(
     boot = bootstrap_sharpe(test_res.equity.pct_change().dropna(), runs=boot_runs)
 
     # 6) custos
-    costs_df = cost_sensitivity(panel, costs, risk, cost_multipliers)
+    costs_df = cost_sensitivity(panel, costs, risk, cost_multipliers, bt=bt)
 
     # 7) baseline aleatória (mesmo período de teste)
     base = random_baseline(panel, bt, runs=baseline_runs, window=split.test)
@@ -211,7 +229,8 @@ def run_protocol(
     if cross_panel_factory is not None:
         try:
             cross_panel = cross_panel_factory(chosen)
-            _, m_cross = evaluate(cross_panel, Backtester(cross_costs or costs, risk))
+            cross_bt = Backtester(cross_costs or costs, risk, cash_rate=rf_daily)
+            _, m_cross = evaluate(cross_panel, cross_bt)
             cross = {
                 "sharpe": m_cross.sharpe,
                 "cagr": m_cross.cagr,
@@ -221,15 +240,20 @@ def run_protocol(
         except ValueError as exc:
             notes.append(f"mercado cruzado indisponível: {exc}")
 
-    bench = (
-        benchmark_metrics(
-            benchmark_close.loc[full_res.equity.index.min() : full_res.equity.index.max()]
-        )
+    window_close = (
+        benchmark_close.loc[full_res.equity.index.min() : full_res.equity.index.max()]
         if benchmark_close is not None
+        else None
+    )
+    bench = benchmark_metrics(window_close, rf_daily) if window_close is not None else {}
+    # Mesma exposição média da estratégia, para o gate do ADR-020.
+    blend = (
+        blended_benchmark(window_close, rf_daily, m_full.exposure_avg, full_res.equity.index)
+        if window_close is not None and m_full.exposure_avg > 0
         else {}
     )
     checklist = approval_checklist(
-        m_test, m_full, wf.efficiency, plat, costs_df, boot, dd_boot, cross, thr
+        m_test, m_full, wf.efficiency, plat, costs_df, boot, dd_boot, cross, thr, blend
     )
     if base_panel.meta.get("n_tickers", 0) and "survivorship" not in " ".join(notes):
         notes.append(
@@ -249,6 +273,7 @@ def run_protocol(
         metrics_train=m_train,
         metrics_test=m_test,
         benchmark=bench,
+        blend=blend,
         monte_carlo=mc,
         dd_bootstrap=dd_boot,
         dd_bootstrap_full=dd_boot_full,

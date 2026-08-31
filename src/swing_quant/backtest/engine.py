@@ -130,12 +130,20 @@ class Backtester:
         *,
         allow_entries: pd.Series | None = None,
         size_factor: pd.Series | None = None,
+        cash_rate: pd.Series | None = None,
     ) -> None:
-        """`allow_entries`/`size_factor` são séries por data (filtro de regime) — opcionais."""
+        """`allow_entries`/`size_factor` são séries por data (filtro de regime) — opcionais.
+
+        `cash_rate` é a série diária de renda fixa (ADR-020). Com ela, o caixa não investido
+        rende, como numa conta que paga CDI: a carteira fica ~70% em caixa, então deixá-lo a
+        0% subestima o resultado tanto quanto medir o Sharpe contra zero o superestima — os
+        dois erros andam juntos e precisam ser corrigidos juntos. `None` mantém caixa a 0%.
+        """
         self.costs = costs or CostModel()
         self.risk = risk or RiskModel()
         self.allow_entries = allow_entries
         self.size_factor = size_factor
+        self.cash_rate = cash_rate
 
     # ------------------------------------------------------------------ sizing
     def sizing_params(self) -> SizingParams:
@@ -195,6 +203,11 @@ class Backtester:
             if self.size_factor is not None
             else np.ones(n_days, dtype=float)
         )
+        cash_rate = (
+            self.cash_rate.reindex(dates).fillna(0.0).to_numpy(dtype=float)
+            if self.cash_rate is not None
+            else np.zeros(n_days, dtype=float)
+        )
 
         cash = r.initial_capital
         positions: dict[int, Position] = {}  # coluna -> posição
@@ -228,6 +241,11 @@ class Backtester:
 
         for d in range(n_days):
             date = dates[d]
+            # ------------------------------------------------------ 0) juros do caixa (ADR-020)
+            # Rende sobre o saldo que atravessou a noite, antes de qualquer ordem do dia; o
+            # sizing de hoje já enxerga o patrimônio maior, como numa conta remunerada de verdade.
+            if d > 0:
+                cash *= 1.0 + cash_rate[d]
             # ---------------------------------------------------------- 0) virada de mês
             if (date.year, date.month) != month_key:
                 month_key = (date.year, date.month)

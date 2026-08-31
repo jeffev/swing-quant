@@ -67,6 +67,30 @@ def test_plateau_ratio_flat_vs_spike() -> None:
     assert plateau_ratio(flat, {"a": 1, "b": 10}, grid) == pytest.approx(1.0)
 
 
+def test_plateau_ignores_the_risk_free_floor() -> None:
+    """Q16: subtrair um piso de todas as células não pode mexer no platô.
+
+    A superfície de parâmetros é a mesma; só a régua mudou. Sem isso, o CDI subindo reprova
+    estratégias por "falta de robustez" que continuam exatamente tão robustas quanto antes.
+    """
+    grid = {"a": [1, 2, 3], "b": [10, 20]}
+    best = {"a": 2, "b": 10}
+    raw = {(1, 10): 0.6, (2, 10): 1.0, (3, 10): 0.6, (1, 20): 0.5, (2, 20): 0.8, (3, 20): 0.5}
+    floor = 0.5  # o piso desloca todas as células igualmente
+    df = pd.DataFrame(
+        [
+            {"a": a, "b": b, "sharpe_raw": raw[(a, b)], "sharpe": raw[(a, b)] - floor}
+            for a in grid["a"]
+            for b in grid["b"]
+        ]
+    )
+
+    # vizinhos de (2,10): (1,10)=0,6 (3,10)=0,6 (2,20)=0,8 -> média 2/3 sobre um ótimo de 1,0
+    assert plateau_ratio(df, best, grid) == pytest.approx(2 / 3)
+    # medido sobre a coluna com piso, o mesmo platô "cairia" para 0,33 — o artefato do Q16
+    assert plateau_ratio(df, best, grid, metric="sharpe") == pytest.approx(1 / 3)
+
+
 def test_walk_forward_windows_and_chaining(prices: pd.DataFrame) -> None:
     grid = {"rsi_entry": [10.0, 15.0]}
     dates = pd.DatetimeIndex(sorted(prices["date"].unique()))

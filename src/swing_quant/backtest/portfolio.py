@@ -124,6 +124,7 @@ def run_portfolio(
     risk: RiskModel,
     regime: Regime | None = None,
     benchmark_close: pd.Series | None = None,
+    rf_daily: pd.Series | None = None,
     split_fractions: tuple[float, float, float] = (0.6, 0.2, 0.2),
 ) -> PortfolioResult:
     """Backtest da carteira combinada (período completo + métricas no terço de teste) e uma
@@ -134,11 +135,12 @@ def run_portfolio(
         risk,
         allow_entries=regime.allow_entries if regime else None,
         size_factor=regime.size_factor if regime else None,
+        cash_rate=rf_daily,
     )
     full = bt.run(panel)
-    m_full = compute_metrics(full.equity, full.trades, full.exposure)
+    m_full = compute_metrics(full.equity, full.trades, full.exposure, rf=rf_daily)
     test_res = bt.run(panel.slice(split.test.start, split.test.end))
-    m_test = compute_metrics(test_res.equity, test_res.trades, test_res.exposure)
+    m_test = compute_metrics(test_res.equity, test_res.trades, test_res.exposure, rf=rf_daily)
 
     # ablação: sem regime / sem regras de carteira / sem ambos
     plain_risk = RiskModel(
@@ -153,25 +155,32 @@ def run_portfolio(
     )
     variants = {
         "completo (regime + risco)": bt,
-        "sem regime": Backtester(costs, risk),
+        "sem regime": Backtester(costs, risk, cash_rate=rf_daily),
         "só tendência + risco": Backtester(
-            costs, risk, allow_entries=regime.allow_entries if regime else None
+            costs,
+            risk,
+            allow_entries=regime.allow_entries if regime else None,
+            cash_rate=rf_daily,
         ),
         "só vol + risco": Backtester(
-            costs, risk, size_factor=regime.size_factor if regime else None
+            costs,
+            risk,
+            size_factor=regime.size_factor if regime else None,
+            cash_rate=rf_daily,
         ),
         "sem regras de carteira": Backtester(
             costs,
             plain_risk,
             allow_entries=regime.allow_entries if regime else None,
             size_factor=regime.size_factor if regime else None,
+            cash_rate=rf_daily,
         ),
-        "sem regime nem regras": Backtester(costs, plain_risk),
+        "sem regime nem regras": Backtester(costs, plain_risk, cash_rate=rf_daily),
     }
     rows = []
     for label, b in variants.items():
         res = b.run(panel)
-        m = compute_metrics(res.equity, res.trades, res.exposure)
+        m = compute_metrics(res.equity, res.trades, res.exposure, rf=rf_daily)
         rows.append(
             {
                 "variante": label,
@@ -185,7 +194,9 @@ def run_portfolio(
     ablation = pd.DataFrame(rows)
 
     bench = (
-        benchmark_metrics(benchmark_close.loc[full.equity.index.min() : full.equity.index.max()])
+        benchmark_metrics(
+            benchmark_close.loc[full.equity.index.min() : full.equity.index.max()], rf_daily
+        )
         if benchmark_close is not None
         else {}
     )

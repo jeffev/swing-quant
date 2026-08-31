@@ -242,3 +242,32 @@ def test_no_target_keeps_the_old_behaviour() -> None:
     )
     res = Backtester(NO_COST, RISK).run(p)
     assert res.trades["exit_reason"].tolist() == ["signal"]
+
+
+def test_idle_cash_earns_the_risk_free_rate() -> None:
+    """ADR-020: sem posição aberta, o caixa rende — e o rendimento compõe sobre si mesmo."""
+    panel = _panel(["A"], {"A": [10.0] * 6}, {"A": [False] * 6})
+    rate = pd.Series(0.001, index=panel.dates)
+
+    flat = Backtester(NO_COST, RISK).run(panel)
+    paid = Backtester(NO_COST, RISK, cash_rate=rate).run(panel)
+
+    assert flat.equity.iloc[-1] == pytest.approx(100_000.0)
+    # juros a partir do 2º pregão (o 1º entra com o saldo inicial, sem pernoite)
+    assert paid.equity.iloc[-1] == pytest.approx(100_000.0 * 1.001**5)
+    assert paid.cash.iloc[-1] == pytest.approx(paid.equity.iloc[-1])
+
+
+def test_cash_rate_only_pays_on_the_uninvested_part() -> None:
+    """Com posição aberta o caixa é menor, então o juro rende menos que na carteira parada."""
+    opens = {"A": [10.0] * 6}
+    entry = {"A": [True, False, False, False, False, False]}
+    panel = _panel(["A"], opens, entry)
+    rate = pd.Series(0.001, index=panel.dates)
+
+    invested = Backtester(NO_COST, RISK, cash_rate=rate).run(panel)
+    idle = Backtester(NO_COST, RISK, cash_rate=rate).run(_panel(["A"], opens, {"A": [False] * 6}))
+
+    assert invested.n_positions.iloc[-1] == 1
+    assert invested.equity.iloc[-1] < idle.equity.iloc[-1]
+    assert invested.equity.iloc[-1] > 100_000.0  # o caixa restante ainda rendeu

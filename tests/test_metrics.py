@@ -5,10 +5,12 @@ import pandas as pd
 import pytest
 
 from swing_quant.backtest.metrics import (
+    blended_benchmark,
     cagr,
     compute_metrics,
     max_consecutive_losses,
     max_drawdown,
+    rf_cagr,
     sharpe_ratio,
 )
 
@@ -80,3 +82,38 @@ def test_compute_metrics_no_trades() -> None:
     assert m.n_trades == 0
     assert math.isnan(m.win_rate)
     assert m.max_drawdown == 0.0
+
+
+def test_sharpe_against_a_daily_rate_series_not_zero() -> None:
+    """ADR-020: uma carteira que rende menos que o CDI tem Sharpe negativo, não positivo."""
+    idx = pd.date_range("2024-01-01", periods=504, freq="B")
+    noise = np.random.default_rng(0).normal(0, 0.004, len(idx))
+    rets = pd.Series(0.0002 + noise, index=idx)  # ~5%/ano
+    cdi = pd.Series(0.0004, index=idx)  # ~10,5%/ano: o dobro
+
+    assert sharpe_ratio(rets) > 0  # contra zero, parece boa
+    assert sharpe_ratio(rets, cdi) < 0  # contra o CDI, destrói valor
+    assert sharpe_ratio(rets, 0.105) < 0  # taxa anual escalar leva à mesma conclusão
+
+
+def test_risk_free_against_itself_is_not_a_ratio() -> None:
+    """Excesso identicamente zero é 0/0 — NaN, não um Sharpe qualquer vindo de ruído numérico."""
+    idx = pd.date_range("2024-01-01", periods=252, freq="B")
+    cdi = pd.Series(0.0004, index=idx)
+    assert math.isnan(sharpe_ratio(cdi, cdi))
+
+
+def test_blended_benchmark_matches_exposure() -> None:
+    """Peso 0 = pura renda fixa; peso 1 = índice puro; no meio, uma mistura das duas."""
+    idx = pd.date_range("2024-01-01", periods=252, freq="B")
+    close = pd.Series(100.0 * (1.004 ** np.arange(len(idx))), index=idx)
+    rf = pd.Series(0.0002, index=idx)
+
+    only_rf = blended_benchmark(close, rf, 0.0, idx)
+    only_eq = blended_benchmark(close, rf, 1.0, idx)
+    half = blended_benchmark(close, rf, 0.5, idx)
+
+    assert only_rf["cagr"] == pytest.approx(rf_cagr(rf, idx), rel=1e-6)
+    assert only_eq["cagr"] == pytest.approx(cagr(close), rel=1e-6)
+    assert only_rf["cagr"] < half["cagr"] < only_eq["cagr"]
+    assert half["max_drawdown"] >= only_eq["max_drawdown"]

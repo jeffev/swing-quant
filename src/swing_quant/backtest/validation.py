@@ -16,7 +16,12 @@ import numpy as np
 import pandas as pd
 
 from swing_quant.backtest.engine import Backtester, BacktestResult, CostModel, RiskModel
-from swing_quant.backtest.metrics import Metrics, compute_metrics, max_drawdown, sharpe_ratio
+from swing_quant.backtest.metrics import (
+    Metrics,
+    compute_metrics,
+    max_drawdown,
+    sharpe_ratio,
+)
 from swing_quant.backtest.panel import Panel, build_panel
 from swing_quant.strategies.base import Strategy
 
@@ -60,13 +65,14 @@ def evaluate(
 ) -> tuple[BacktestResult, Metrics]:
     p = panel.slice(window.start, window.end) if window else panel
     res = bt.run(p)
-    return res, compute_metrics(res.equity, res.trades, res.exposure)
+    return res, compute_metrics(res.equity, res.trades, res.exposure, rf=bt.cash_rate)
 
 
-def _row(params: Mapping[str, Any], m: Metrics) -> dict[str, Any]:
+def _row(params: Mapping[str, Any], m: Metrics, sharpe_raw: float = float("nan")) -> dict[str, Any]:
     return {
         **params,
         "sharpe": m.sharpe,
+        "sharpe_raw": sharpe_raw,
         "cagr": m.cagr,
         "max_drawdown": m.max_drawdown,
         "profit_factor": m.profit_factor,
@@ -87,8 +93,11 @@ def grid_search(
     rows = []
     for inst in strategy.grid(grid):
         params = {k: inst.params.model_dump()[k] for k in grid}
-        _, m = evaluate(make_panel(inst), bt, window)
-        rows.append(_row(params, m))
+        res, m = evaluate(make_panel(inst), bt, window)
+        # Sharpe sem o piso de renda fixa, só para o platô (Q16): a robustez que interessa aqui
+        # é a da superfície de parâmetros, e ela não deve mudar porque o CDI subiu.
+        raw = sharpe_ratio(res.equity.pct_change().dropna())
+        rows.append(_row(params, m, raw))
     return pd.DataFrame(rows)
 
 
@@ -103,13 +112,21 @@ def plateau_ratio(
     grid_df: pd.DataFrame,
     best: Mapping[str, Any],
     grid: Mapping[str, list[Any]],
-    metric: str = "sharpe",
+    metric: str = "sharpe_raw",
 ) -> float:
     """Média da métrica dos vizinhos imediatos (±1 passo em um parâmetro) / métrica do ótimo.
 
     ≥ 0,7 indica platô (docs/04 §2.3). NaN se não houver vizinhos ou ótimo ≤ 0.
+
+    A métrica padrão é o Sharpe **sem** o piso de renda fixa (Q16). Com o piso, subtrair ~9,8%
+    de todas as células encolhe o ótimo proporcionalmente mais que os vizinhos e a razão cai
+    sozinha — no Donchian/B3 foi de 0,78 para 0,50 com a grade idêntica, mesma ordenação e
+    mesmos parâmetros escolhidos. Robustez da superfície de parâmetros e atratividade econômica
+    são perguntas diferentes: esta função responde só a primeira; o piso fica nos gates.
     """
     keys = list(grid)
+    if metric not in grid_df.columns:  # grades antigas, sem a coluna
+        metric = "sharpe"
     best_val = _lookup(grid_df, best, keys, metric)
     if best_val is None or not (best_val > 0):
         return float("nan")
@@ -335,10 +352,13 @@ def cost_sensitivity(
     risk: RiskModel,
     multipliers: Sequence[float] = (0, 1, 2, 3),
     window: Window | None = None,
+    bt: Backtester | None = None,
 ) -> pd.DataFrame:
+    bt = bt or Backtester(base_costs, risk)
     rows = []
     for m in multipliers:
-        _, met = evaluate(panel, Backtester(base_costs.scaled(m), risk), window)
+        scaled = Backtester(base_costs.scaled(m), risk, cash_rate=bt.cash_rate)
+        _, met = evaluate(panel, scaled, window)
         rows.append(
             {
                 "cost_mult": m,

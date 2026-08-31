@@ -42,6 +42,8 @@ def _metrics_table(cols: dict[str, Metrics]) -> str:
         ("Max drawdown", lambda m: _pct(m.max_drawdown)),
         ("Duração MDD (pregões)", lambda m: str(m.max_drawdown_days)),
         ("Calmar", lambda m: _f(m.calmar)),
+        ("Renda fixa no período", lambda m: _pct(m.rf_cagr)),
+        ("CAGR − renda fixa", lambda m: _pct(m.excess_over_rf)),
         ("Exposição média", lambda m: _pct(m.exposure_avg)),
         ("Nº trades", lambda m: str(m.n_trades)),
         ("Win rate", lambda m: _pct(m.win_rate)),
@@ -113,6 +115,15 @@ def render_markdown(r: ProtocolResult, plots: dict[str, Path] | None = None) -> 
             "",
             f"Benchmark buy-and-hold (período completo): CAGR {_pct(r.benchmark.get('cagr'))}, "
             f"Sharpe {_f(r.benchmark.get('sharpe'))}, MDD {_pct(r.benchmark.get('max_drawdown'))}",
+        ]
+    if r.blend:
+        w = r.blend.get("weight", float("nan"))
+        lines += [
+            "",
+            f"Carteira passiva de mesma exposição ({w:.0%} índice + renda fixa): "
+            f"CAGR {_pct(r.blend.get('cagr'))}, Sharpe {_f(r.blend.get('sharpe'))}, "
+            f"MDD {_pct(r.blend.get('max_drawdown'))} — é contra ela que o gate do ADR-020 mede, "
+            "não contra o índice cheio.",
         ]
     if plots:
         lines += ["", "## Gráficos", ""]

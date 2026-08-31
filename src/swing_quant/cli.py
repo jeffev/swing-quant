@@ -17,6 +17,7 @@ from swing_quant.data.calendar import Market
 
 if TYPE_CHECKING:
     from swing_quant.backtest.protocol import ProtocolResult
+    from swing_quant.data.store import MarketStore
 
 app = typer.Typer(
     name="swing-quant",
@@ -425,6 +426,23 @@ def bench(
     console.print("\nResultado por ação: `swing-quant dashboard` → página [bold]Backtests[/bold].")
 
 
+def _risk_free_for(store: MarketStore, cfg: Config, mkt: Market) -> pd.Series | None:
+    """Série de renda fixa do mercado, ou `None` quando o ADR-020 está desligado ou não há dados.
+
+    `None` significa literalmente "sem piso": Sharpe contra zero e caixa a 0%, como antes.
+    """
+    if not cfg.capital.cash_earns_risk_free:
+        return None
+    rf = store.risk_free(mkt)
+    if rf.empty:
+        console.print(
+            f"[yellow]Sem série de renda fixa para {mkt.upper()}[/yellow] — rode "
+            "`update-riskfree`. Sharpe medido contra zero e caixa sem remuneração."
+        )
+        return None
+    return rf
+
+
 def _protocol_run(
     cfg: Config,
     strategy: str,
@@ -482,6 +500,7 @@ def _protocol_run(
         bench_close = (
             bench_prices.set_index("date")["adj_close"] if not bench_prices.empty else None
         )
+        rf_daily = _risk_free_for(store, cfg, mkt)
         cross_factory = None
         if cross:
             console.print(f"Carregando preços {other.upper()} (mercado cruzado)…")
@@ -506,6 +525,7 @@ def _protocol_run(
             boot_runs=200 if quick else 1000,
             baseline_runs=10 if quick else 30,
             benchmark_close=bench_close,
+            rf_daily=rf_daily,
             cross_panel_factory=cross_factory,
             cross_costs=costs_for(other),
             min_trades_select=v.min_test_trades,
@@ -580,6 +600,7 @@ def portfolio(
         prices = store.get_prices(tickers, start=start, end=end)
         bench = store.get_prices([cfg.market_universe(mkt).benchmark], start=start, end=end)
         bench_close = bench.set_index("date")["adj_close"] if not bench.empty else None
+        rf_daily = _risk_free_for(store, cfg, mkt)
 
     factory = default_panel_factory(prices)
     panels = {n: factory(make_strategy(n, cfg.strategies.get(n, {}))) for n in names}
@@ -604,6 +625,7 @@ def portfolio(
         risk=risk,
         regime=reg,
         benchmark_close=bench_close,
+        rf_daily=rf_daily,
         split_fractions=(cfg.validation.split[0], cfg.validation.split[1], cfg.validation.split[2]),
     )
     path = save_portfolio_report(result, out)

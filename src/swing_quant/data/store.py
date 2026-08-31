@@ -251,6 +251,19 @@ class MarketStore:
         """
         return self.con.execute(sql, [index_name, index_name, as_of]).df()
 
+    def risk_free(self, market: str) -> pd.Series:
+        """Série diária de renda fixa do mercado (CDI ou T-bills), indexada por data.
+
+        É o piso de comparação do ADR-020: entra no Sharpe como custo de oportunidade e no
+        engine como rendimento do caixa. Vazia quando ainda não houve `update-riskfree`.
+        """
+        df = self.con.execute(
+            "SELECT date, daily_return FROM risk_free WHERE market = ? ORDER BY date", [market]
+        ).df()
+        if df.empty:
+            return pd.Series(dtype=float)
+        return pd.Series(df["daily_return"].to_numpy(), index=pd.DatetimeIndex(df["date"]))
+
     # ------------------------------------------------------------------ eventos
     def upsert_corporate_events(self, df: pd.DataFrame) -> int:
         if df.empty:

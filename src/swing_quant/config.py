@@ -15,6 +15,10 @@ class CapitalConfig(BaseModel):
     #: capital dedicado por mercado (sleeves independentes); ausente -> `initial`
     initial_by_market: dict[str, float] = Field(default_factory=dict)
 
+    #: caixa não investido rende a renda fixa do mercado (ADR-020). Desligar volta ao
+    #: comportamento antigo (caixa a 0%) — e aí o Sharpe também deve voltar a ser contra zero.
+    cash_earns_risk_free: bool = True
+
     def for_market(self, market: str) -> float:
         return float(self.initial_by_market.get(market, self.initial))
 
