@@ -1,12 +1,15 @@
 # Estudo: swing trade x investir
 
-Análise de dados comparando o swing trade quantitativo do projeto com quatro alternativas
-passivas, sobre os 16,6 anos de histórico do `data/market.duckdb` (2010-01 a 2026-08).
+Análise de dados comparando o swing trade quantitativo do projeto com as alternativas passivas
+— quatro baselines de ações/caixa e, desde a seção 13, **todas as classes de ativo** que um
+investidor brasileiro ou americano podia ter comprado — sobre os 16,6 anos de histórico do
+`data/market.duckdb` (2010-01 a 2026-08).
 
 | Arquivo | O que é |
 |---|---|
-| `swing_vs_investing.ipynb` | O estudo: 7 achados, tabelas e figuras, com as saídas já executadas |
+| `swing_vs_investing.ipynb` | O estudo: 8 achados, tabelas e figuras, com as saídas já executadas |
 | `study_lib.py` | Os helpers do estudo (baselines passivas, juros sobre o caixa, impostos, DCA) |
+| `asset_classes.py` | A comparação entre classes de ativo (seção 13): curvas mensais, retorno real, correlação |
 | `study_results.json` | Todos os números exportados pelo notebook — fonte única do artigo |
 | `article/swing_vs_investing.html` | O artigo publicado (gráficos em SVG, dados embutidos) |
 | `figures/` | PNGs das figuras (regeneráveis; fora do git, já estão dentro do `.ipynb`) |
@@ -28,6 +31,23 @@ O notebook reusa o motor de produção (`Backtester`, `build_panel`, `run_portfo
 com os mesmos custos, sizing e regras de risco do `config.yaml`, então o lado "swing" da
 comparação é exatamente o que o `swing-quant portfolio` roda.
 
+## Os dados da seção 13 (classes de ativo)
+
+Os proxies vivem no mesmo `market.duckdb`, ingeridos por `swing-quant update-assets` e
+`swing-quant update-macro`. Três não vêm do yfinance de propósito:
+
+- **FIIs**: IFIX oficial da B3. Uma cesta reconstruída por cotação de fundos individuais erra a
+  classe em mais de quatro pontos ao ano — o `adj_close` do yfinance só conhece os proventos
+  recentes, e um FII distribui quase todo o retorno em dinheiro. O mesmo vale para o SMLL.
+- **Imóvel físico**: IVG-R do Banco Central (SGS 21340), que é avaliação, não preço de mercado —
+  mede quanto o imóvel *vale*, não quanto ele *rende*, então há uma segunda linha com 4% ao ano
+  de aluguel líquido somado.
+- **Títulos públicos**: arquivo de preços do próprio Tesouro Direto, marcados a mercado e rolados
+  num vencimento-alvo fixo, em vez de uma hipótese de cupom.
+
+A comparação é mensal porque imóvel e poupança só existem mensalmente, e o retorno reportado é
+**real** (deflacionado por IPCA no Brasil, CPI nos EUA) — em 16 anos a inflação decide o ranking.
+
 ## O que o `study_lib` acrescenta ao motor
 
 O backtester deixa três coisas de fora de propósito — o que é certo num protocolo de validação
@@ -47,4 +67,6 @@ e errado numa comparação contra investir:
 ## Aviso
 
 Resultados de backtest, um único caminho histórico, universo com viés de sobrevivência
-(composição atual dos índices) e impostos simplificados. Não é recomendação de investimento.
+(composição atual dos índices) e impostos simplificados. A comparação entre classes de ativo é
+bruta de imposto e de taxa de administração, e usa índices — que ninguém compra diretamente.
+Não é recomendação de investimento.
