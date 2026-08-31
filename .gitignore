@@ -23,6 +23,8 @@ data/*
 # Notebooks
 notebooks/.ipynb_checkpoints/
 notebooks/*.parquet
+# figuras do estudo: duplicam as saídas já embutidas no .ipynb
+notebooks/figures/
 
 # Relatórios gerados
 reports/
