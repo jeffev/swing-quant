@@ -11069,6 +11069,1321 @@
    ]
   }
  },
+ "investor": {
+  "markets": {
+   "b3": {
+    "label": "Brazil (B3)",
+    "portfolios": [
+     {
+      "n": "40/40 + 20% dollarised",
+      "cagr_real": 0.05514267009596541,
+      "cagr_nominal": 0.1161498610159537,
+      "volatility": 0.08378557098984256,
+      "max_drawdown": -0.14343772496116935,
+      "sharpe": 0.22839197980816345,
+      "worst_year": -0.00010662886678303174,
+      "weights": {
+       "acoes_br": 0.4,
+       "cdi": 0.4,
+       "sp500_brl": 0.2
+      },
+      "note": "the same book with a fifth of it earning in dollars"
+     },
+     {
+      "n": "Permanent portfolio",
+      "cagr_real": 0.05100989485360996,
+      "cagr_nominal": 0.11361049005071622,
+      "volatility": 0.06822223763539381,
+      "max_drawdown": -0.12499529019717193,
+      "sharpe": 0.23128733791004893,
+      "worst_year": -0.10330594698043716,
+      "weights": {
+       "acoes_br": 0.25,
+       "cdi": 0.25,
+       "tesouro_ipca": 0.25,
+       "ouro_brl": 0.25
+      },
+      "note": "equal parts stocks, cash, long bonds and gold"
+     },
+     {
+      "n": "100% cash (CDI)",
+      "cagr_real": 0.03857890280552856,
+      "cagr_nominal": 0.09870262431800514,
+      "volatility": 0.00978391663089417,
+      "max_drawdown": 0.0,
+      "sharpe": null,
+      "worst_year": 0.027578158163063637,
+      "weights": {
+       "cdi": 1.0
+      },
+      "note": "the default every Brazilian has"
+     },
+     {
+      "n": "Diversified Brazil",
+      "cagr_real": 0.02934046667541712,
+      "cagr_nominal": 0.0885797413224978,
+      "volatility": 0.08466944061409815,
+      "max_drawdown": -0.15942533392128444,
+      "sharpe": -0.0694384420311439,
+      "worst_year": -0.08124169051990926,
+      "weights": {
+       "acoes_br": 0.3,
+       "cdi": 0.3,
+       "fiis": 0.2,
+       "tesouro_ipca": 0.2
+      },
+      "note": "stocks, cash, property funds and inflation-linked bonds"
+     },
+     {
+      "n": "60/40 Brazil",
+      "cagr_real": 0.021842651249377454,
+      "cagr_nominal": 0.08041105023404316,
+      "volatility": 0.12252248682496718,
+      "max_drawdown": -0.22065398783072798,
+      "sharpe": -0.07771812666555503,
+      "worst_year": -0.06488878367302064,
+      "weights": {
+       "acoes_br": 0.6,
+       "cdi": 0.4
+      },
+      "note": "the textbook portfolio, translated to Brazil"
+     },
+     {
+      "n": "100% Brazilian stocks",
+      "cagr_real": 0.0047041476346569855,
+      "cagr_nominal": 0.06202609934829195,
+      "volatility": 0.2072075233173895,
+      "max_drawdown": -0.4282682212443223,
+      "sharpe": -0.06012902112031573,
+      "worst_year": -0.1810980448741073,
+      "weights": {
+       "acoes_br": 1.0
+      },
+      "note": "the other extreme"
+     }
+    ],
+    "rebalance": [
+     {
+      "n": "60/40 Brazil",
+      "rebalanced": 0.021842651249377454,
+      "drifting": 0.02052804851309209
+     },
+     {
+      "n": "40/40 + 20% dollarised",
+      "rebalanced": 0.05514267009596541,
+      "drifting": 0.0728125909784052
+     },
+     {
+      "n": "Diversified Brazil",
+      "rebalanced": 0.02934046667541712,
+      "drifting": 0.027049091222290267
+     },
+     {
+      "n": "Permanent portfolio",
+      "rebalanced": 0.05100989485360996,
+      "drifting": 0.04951310912713547
+     }
+    ],
+    "windows5y": [
+     {
+      "n": "Bitcoin in reais",
+      "median": 0.5925851999727608,
+      "p5": 0.057503107305088105,
+      "p95": 1.5384184311914555,
+      "worst": -0.04499999709840552,
+      "best": 1.8388471138966405,
+      "share_negative": 0.024390243902439025,
+      "share_below_cash": 0.06097560975609756,
+      "worst_months_underwater": 43.0,
+      "share_underwater": 0.7816901408450704,
+      "n_windows": 82.0
+     },
+     {
+      "n": "S&P 500 in reais",
+      "median": 0.17069808754462878,
+      "p5": 0.08003438113265862,
+      "p95": 0.24203551525604833,
+      "worst": 0.03801548866131199,
+      "best": 0.2691925561785091,
+      "share_negative": 0.0,
+      "share_below_cash": 0.014492753623188406,
+      "worst_months_underwater": 29.0,
+      "share_underwater": 0.7171717171717171,
+      "n_windows": 138.0
+     },
+     {
+      "n": "Gold in reais",
+      "median": 0.09203899261570425,
+      "p5": -0.02218021360890396,
+      "p95": 0.14914093365788386,
+      "worst": -0.03772920276112113,
+      "best": 0.17337643496904498,
+      "share_negative": 0.11594202898550725,
+      "share_below_cash": 0.21014492753623187,
+      "worst_months_underwater": 45.0,
+      "share_underwater": 0.797979797979798,
+      "n_windows": 138.0
+     },
+     {
+      "n": "Swing quant (donchian)",
+      "median": 0.05397738324588197,
+      "p5": 0.014918610512998799,
+      "p95": 0.11452593096528105,
+      "worst": 0.01115661570230242,
+      "best": 0.12537283529187704,
+      "share_negative": 0.0,
+      "share_below_cash": 0.16666666666666666,
+      "worst_months_underwater": 34.0,
+      "share_underwater": 0.696969696969697,
+      "n_windows": 138.0
+     },
+     {
+      "n": "Fixed-rate government bond (~4y)",
+      "median": 0.043044126772913804,
+      "p5": -0.019475079703248698,
+      "p95": 0.12162263892762405,
+      "worst": -0.030260689247340933,
+      "best": 0.14540436392170375,
+      "share_negative": 0.12949640287769784,
+      "share_below_cash": 0.2805755395683453,
+      "worst_months_underwater": 72.0,
+      "share_underwater": 0.7185929648241206,
+      "n_windows": 139.0
+     },
+     {
+      "n": "US dollars under the mattress",
+      "median": 0.039338909819432555,
+      "p5": -0.06020526442384828,
+      "p95": 0.09452624191302061,
+      "worst": -0.07262601736479235,
+      "best": 0.1199991271964469,
+      "share_negative": 0.21014492753623187,
+      "share_below_cash": 0.4420289855072464,
+      "worst_months_underwater": 69.0,
+      "share_underwater": 0.9242424242424242,
+      "n_windows": 138.0
+     },
+     {
+      "n": "Inflation-linked government bond (~10y)",
+      "median": 0.03619028102659794,
+      "p5": -0.0322577269355062,
+      "p95": 0.10381888888620146,
+      "worst": -0.04785615567923163,
+      "best": 0.11693422599171188,
+      "share_negative": 0.22302158273381295,
+      "share_below_cash": 0.38848920863309355,
+      "worst_months_underwater": 72.0,
+      "share_underwater": 0.7688442211055276,
+      "n_windows": 139.0
+     },
+     {
+      "n": "Floating-rate government bond",
+      "median": 0.033450111187951714,
+      "p5": 0.0070315063248865385,
+      "p95": 0.052608894825595706,
+      "worst": 0.0007828155913978119,
+      "best": 0.06783889630516349,
+      "share_negative": 0.0,
+      "share_below_cash": 0.04316546762589928,
+      "worst_months_underwater": 35.0,
+      "share_underwater": 0.3417085427135678,
+      "n_windows": 139.0
+     },
+     {
+      "n": "CDI (cash)",
+      "median": 0.032484729141399216,
+      "p5": 0.004845777873399526,
+      "p95": 0.04803973667622846,
+      "worst": -0.0013167256529110771,
+      "best": 0.06360334835464942,
+      "share_negative": 0.007194244604316547,
+      "share_below_cash": 0.0,
+      "worst_months_underwater": 36.0,
+      "share_underwater": 0.35678391959798994,
+      "n_windows": 139.0
+     },
+     {
+      "n": "Physical property + net rent (4%)",
+      "median": 0.026862911455382,
+      "p5": -0.01762276745445419,
+      "p95": 0.057986666178187596,
+      "worst": -0.018402253151885706,
+      "best": 0.09204874871744795,
+      "share_negative": 0.25547445255474455,
+      "share_below_cash": 0.5328467153284672,
+      "worst_months_underwater": 69.0,
+      "share_underwater": 0.5076142131979695,
+      "n_windows": 137.0
+     },
+     {
+      "n": "Brazilian stocks (Ibovespa)",
+      "median": 0.021971470905708612,
+      "p5": -0.12350179916397583,
+      "p95": 0.13374926991365524,
+      "worst": -0.15539014542187657,
+      "best": 0.18569673959074273,
+      "share_negative": 0.3695652173913043,
+      "share_below_cash": 0.5797101449275363,
+      "worst_months_underwater": 189.0,
+      "share_underwater": 0.9797979797979798,
+      "n_windows": 138.0
+     },
+     {
+      "n": "Listed property funds (IFIX)",
+      "median": 0.015484722375922688,
+      "p5": -0.019429468823318252,
+      "p95": 0.1017528021007472,
+      "worst": -0.06094320727169089,
+      "best": 0.12790315318528434,
+      "share_negative": 0.2283464566929134,
+      "share_below_cash": 0.5984251968503937,
+      "worst_months_underwater": 79.0,
+      "share_underwater": 0.8288770053475936,
+      "n_windows": 127.0
+     },
+     {
+      "n": "Savings account",
+      "median": 0.0010155182883595515,
+      "p5": -0.013398245463848523,
+      "p95": 0.01313927423670573,
+      "worst": -0.017436523259920178,
+      "best": 0.01854425710547436,
+      "share_negative": 0.4748201438848921,
+      "share_below_cash": 1.0,
+      "worst_months_underwater": 65.0,
+      "share_underwater": 0.7889447236180904,
+      "n_windows": 139.0
+     },
+     {
+      "n": "Physical property (IVG-R)",
+      "median": -0.01248469516108841,
+      "p5": -0.0554024431186273,
+      "p95": 0.017573555101431146,
+      "worst": -0.056149741973403056,
+      "best": 0.05042291074317817,
+      "share_negative": 0.9124087591240876,
+      "share_below_cash": 0.9708029197080292,
+      "worst_months_underwater": 151.0,
+      "share_underwater": 0.7766497461928934,
+      "n_windows": 137.0
+     },
+     {
+      "n": "Brazilian small caps (SMLL)",
+      "median": -0.03678845151726551,
+      "p5": -0.14405089415938738,
+      "p95": 0.19191799455299627,
+      "worst": -0.16145644690854077,
+      "best": 0.23552328043860493,
+      "share_negative": 0.6159420289855072,
+      "share_below_cash": 0.6811594202898551,
+      "worst_months_underwater": 107.0,
+      "share_underwater": 0.9444444444444444,
+      "n_windows": 138.0
+     }
+    ],
+    "portfolio_windows5y": [
+     {
+      "n": "40/40 + 20% dollarised",
+      "median": 0.05091461731350133,
+      "p5": 0.012345725365253659,
+      "p95": 0.1152821590359165,
+      "worst": 0.0008919026425453502,
+      "best": 0.13127733142022224,
+      "share_negative": 0.0,
+      "share_below_cash": 0.16666666666666666,
+      "worst_months_underwater": 51.0,
+      "share_underwater": 0.7323232323232324,
+      "n_windows": 138.0
+     },
+     {
+      "n": "Permanent portfolio",
+      "median": 0.040183296704389804,
+      "p5": 0.008428637075464542,
+      "p95": 0.11119954772226646,
+      "worst": -0.005895659345616977,
+      "best": 0.1250203064132005,
+      "share_negative": 0.014492753623188406,
+      "share_below_cash": 0.3695652173913043,
+      "worst_months_underwater": 52.0,
+      "share_underwater": 0.7070707070707071,
+      "n_windows": 138.0
+     },
+     {
+      "n": "100% cash (CDI)",
+      "median": 0.032484729141399216,
+      "p5": 0.004845777873399526,
+      "p95": 0.04803973667622846,
+      "worst": -0.0013167256529110771,
+      "best": 0.06360334835464942,
+      "share_negative": 0.007194244604316547,
+      "share_below_cash": 0.0,
+      "worst_months_underwater": 36.0,
+      "share_underwater": 0.35678391959798994,
+      "n_windows": 139.0
+     },
+     {
+      "n": "60/40 Brazil",
+      "median": 0.024763209912071815,
+      "p5": -0.058677007581702065,
+      "p95": 0.09565955886904849,
+      "worst": -0.08023276891585451,
+      "best": 0.12628073353754954,
+      "share_negative": 0.26811594202898553,
+      "share_below_cash": 0.572463768115942,
+      "worst_months_underwater": 86.0,
+      "share_underwater": 0.8888888888888888,
+      "n_windows": 138.0
+     },
+     {
+      "n": "100% Brazilian stocks",
+      "median": 0.021971470905708612,
+      "p5": -0.12350179916397583,
+      "p95": 0.13374926991365524,
+      "worst": -0.15539014542187657,
+      "best": 0.18569673959074273,
+      "share_negative": 0.3695652173913043,
+      "share_below_cash": 0.5797101449275363,
+      "worst_months_underwater": 189.0,
+      "share_underwater": 0.9797979797979798,
+      "n_windows": 138.0
+     },
+     {
+      "n": "Diversified Brazil",
+      "median": 0.020813329011905024,
+      "p5": -0.011118789947106189,
+      "p95": 0.092075512030945,
+      "worst": -0.030909573277506874,
+      "best": 0.11344955471610829,
+      "share_negative": 0.14173228346456693,
+      "share_below_cash": 0.5511811023622047,
+      "worst_months_underwater": 70.0,
+      "share_underwater": 0.8235294117647058,
+      "n_windows": 127.0
+     }
+    ],
+    "tax": [
+     {
+      "n": "Bitcoin in reais",
+      "gross_real": 0.5478432932608563,
+      "net_real": 0.5267980085087687,
+      "tax_drag": 0.021045284752087667,
+      "inflation_tax": 0.010496289082156718,
+      "note": "exempt below R$35k of monthly sales"
+     },
+     {
+      "n": "S&P 500 in reais",
+      "gross_real": 0.1499896207987077,
+      "net_real": 0.13919857519105938,
+      "tax_drag": 0.01079104560764832,
+      "inflation_tax": 0.006956670149036226,
+      "note": "via a local ETF or BDR"
+     },
+     {
+      "n": "Gold in reais",
+      "gross_real": 0.08805217708840662,
+      "net_real": 0.07851537283618093,
+      "tax_drag": 0.009536804252225695,
+      "inflation_tax": 0.00652166501179674,
+      "note": ""
+     },
+     {
+      "n": "Fixed-rate government bond (~4y)",
+      "gross_real": 0.046471525426131643,
+      "net_real": 0.038281127829733474,
+      "tax_drag": 0.008190397596398169,
+      "inflation_tax": 0.006186957711578067,
+      "note": "15% on redemption"
+     },
+     {
+      "n": "Floating-rate government bond",
+      "gross_real": 0.04051545178758986,
+      "net_real": 0.03256731865186402,
+      "tax_drag": 0.007948133135725843,
+      "inflation_tax": 0.006134468354343836,
+      "note": "15% on redemption"
+     },
+     {
+      "n": "Inflation-linked government bond (~10y)",
+      "gross_real": 0.03939448814021507,
+      "net_real": 0.03149387807174375,
+      "tax_drag": 0.007900610068471314,
+      "inflation_tax": 0.006124425264856237,
+      "note": "15% on redemption"
+     },
+     {
+      "n": "CDI (cash)",
+      "gross_real": 0.03857890280552856,
+      "net_real": 0.03071326932590912,
+      "tax_drag": 0.007865633479619438,
+      "inflation_tax": 0.0061170841598297,
+      "note": "regressive table, 15% past two years"
+     },
+     {
+      "n": "Listed property funds (IFIX)",
+      "gross_real": 0.030356206255817586,
+      "net_real": 0.030158988009613363,
+      "tax_drag": 0.00019721824620422268,
+      "inflation_tax": 0.00022072029459496711,
+      "note": "distributions exempt for individuals; 20% on the price gain when sold"
+     },
+     {
+      "n": "Physical property + net rent (4%)",
+      "gross_real": 0.03982342171787945,
+      "net_real": 0.017677544340938267,
+      "tax_drag": 0.02214587737694118,
+      "inflation_tax": 0.004123802755560568,
+      "note": "rent taxed on the progressive table; ITBI, deed and agent's fee"
+     },
+     {
+      "n": "Savings account",
+      "gross_real": 0.005845038960528015,
+      "net_real": 0.005845038960528015,
+      "tax_drag": 0.0,
+      "inflation_tax": 0.0,
+      "note": "exempt"
+     },
+     {
+      "n": "Brazilian stocks (Ibovespa)",
+      "gross_real": 0.0047041476346569855,
+      "net_real": -0.0013480325510123459,
+      "tax_drag": 0.006052180185669331,
+      "inflation_tax": 0.005781413754727072,
+      "note": "15% on the gain; the R$20k monthly exemption does not cover a single large sale"
+     },
+     {
+      "n": "US dollars under the mattress",
+      "gross_real": 0.00447425416980507,
+      "net_real": -0.0015626035936671112,
+      "tax_drag": 0.006036857763472181,
+      "inflation_tax": 0.005778898103059094,
+      "note": ""
+     },
+     {
+      "n": "Physical property (IVG-R)",
+      "gross_real": 1.2831530538992553e-05,
+      "net_real": -0.01210349240966746,
+      "tax_drag": 0.012116323940206453,
+      "inflation_tax": 0.005246416870465009,
+      "note": "ITBI and deed on the way in, agent's fee on the way out"
+     },
+     {
+      "n": "Brazilian small caps (SMLL)",
+      "gross_real": -0.015940171231674904,
+      "net_real": -0.020410162004910637,
+      "tax_drag": 0.0044699907732357325,
+      "inflation_tax": 0.0044699907732358435,
+      "note": ""
+     }
+    ],
+    "regime": {
+     "buckets": [
+      "low real rate",
+      "middle",
+      "high real rate"
+     ],
+     "bounds": {
+      "low real rate": [
+       -0.06620273457006443,
+       0.02605759200830815
+      ],
+      "middle": [
+       0.026830161378348594,
+       0.056218454829328524
+      ],
+      "high real rate": [
+       0.05684211898817959,
+       0.1030303870825362
+      ]
+     },
+     "months": {
+      "low real rate": 63,
+      "middle": 62,
+      "high real rate": 63
+     },
+     "rows": [
+      {
+       "n": "Brazilian stocks (Ibovespa)",
+       "low real rate": -0.1082421930567885,
+       "middle": 0.07745263777713318,
+       "high real rate": 0.05931140589277106
+      },
+      {
+       "n": "Brazilian small caps (SMLL)",
+       "low real rate": -0.13301510591330834,
+       "middle": 0.08668974982729782,
+       "high real rate": -0.02352199547057221
+      },
+      {
+       "n": "Listed property funds (IFIX)",
+       "low real rate": -0.07858131355500753,
+       "middle": 0.13280357848645385,
+       "high real rate": 0.051132446651292573
+      },
+      {
+       "n": "Physical property (IVG-R)",
+       "low real rate": -0.018545556664672613,
+       "middle": 0.0006798969171970537,
+       "high real rate": -0.007092085614935573
+      },
+      {
+       "n": "S&P 500 in reais",
+       "low real rate": 0.09085162722996909,
+       "middle": 0.19803913138424134,
+       "high real rate": 0.1946787441781559
+      },
+      {
+       "n": "Gold in reais",
+       "low real rate": -0.03666005698391417,
+       "middle": 0.1823120891988499,
+       "high real rate": 0.1227463199601051
+      },
+      {
+       "n": "US dollars under the mattress",
+       "low real rate": 0.015896537320872817,
+       "middle": 0.035197479520933106,
+       "high real rate": -0.01085464499242872
+      },
+      {
+       "n": "Bitcoin in reais",
+       "low real rate": 0.3647892936286681,
+       "middle": 0.11013164152128563,
+       "high real rate": 1.0665972672017854
+      },
+      {
+       "n": "CDI (cash)",
+       "low real rate": 0.0004362358733929206,
+       "middle": 0.04293186944963612,
+       "high real rate": 0.0741590859054373
+      },
+      {
+       "n": "Savings account",
+       "low real rate": -0.02100833567097704,
+       "middle": 0.00805862636140664,
+       "high real rate": 0.03045124189653481
+      },
+      {
+       "n": "Floating-rate government bond",
+       "low real rate": 0.002681697058885435,
+       "middle": 0.04281034791448857,
+       "high real rate": 0.0780984999790888
+      },
+      {
+       "n": "Fixed-rate government bond (~4y)",
+       "low real rate": -0.037206513907651284,
+       "middle": 0.10930932582128183,
+       "high real rate": 0.07097729426911048
+      },
+      {
+       "n": "Inflation-linked government bond (~10y)",
+       "low real rate": -0.07915862291706532,
+       "middle": 0.14927663623130427,
+       "high real rate": 0.050533800502588155
+      },
+      {
+       "n": "Physical property + net rent (4%)",
+       "low real rate": 0.020545172208876528,
+       "middle": 0.040512517916081014,
+       "high real rate": 0.03250363423488967
+      },
+      {
+       "n": "Swing quant (donchian)",
+       "low real rate": 0.02203417058284174,
+       "middle": 0.0664529893155601,
+       "high real rate": 0.11451193838544582
+      }
+     ]
+    },
+    "horizons": [
+     {
+      "class": "Brazilian stocks (Ibovespa)",
+      "1y median": -0.008511450598006676,
+      "1y neg": 0.510752688172043,
+      "3y median": -0.003878991361732642,
+      "3y neg": 0.5308641975308642,
+      "5y median": 0.021971470905708612,
+      "5y neg": 0.3695652173913043,
+      "10y median": 0.017370248013908074,
+      "10y neg": 0.24358974358974358
+     },
+     {
+      "class": "Listed property funds (IFIX)",
+      "1y median": 0.01608999058302807,
+      "1y neg": 0.44571428571428573,
+      "3y median": 0.021873057871210744,
+      "3y neg": 0.36423841059602646,
+      "5y median": 0.015484722375922688,
+      "5y neg": 0.2283464566929134,
+      "10y median": 0.03094855060040569,
+      "10y neg": 0.04477611940298507
+     },
+     {
+      "class": "CDI (cash)",
+      "1y median": 0.03852670093025501,
+      "1y neg": 0.11764705882352941,
+      "3y median": 0.03281808317934831,
+      "3y neg": 0.1656441717791411,
+      "5y median": 0.032484729141399216,
+      "5y neg": 0.007194244604316547,
+      "10y median": 0.03234510291994708,
+      "10y neg": 0.0
+     },
+     {
+      "class": "S&P 500 in reais",
+      "1y median": 0.17418865426246743,
+      "1y neg": 0.1827956989247312,
+      "3y median": 0.16425027628708566,
+      "3y neg": 0.037037037037037035,
+      "5y median": 0.17069808754462878,
+      "5y neg": 0.0,
+      "10y median": 0.1650258858446937,
+      "10y neg": 0.0
+     },
+     {
+      "class": "Physical property + net rent (4%)",
+      "1y median": 0.04192652121584883,
+      "1y neg": 0.24864864864864866,
+      "3y median": 0.028425666813875372,
+      "3y neg": 0.2484472049689441,
+      "5y median": 0.026862911455382,
+      "5y neg": 0.25547445255474455,
+      "10y median": 0.015788140333905076,
+      "10y neg": 0.0
+     },
+     {
+      "class": "Savings account",
+      "1y median": 0.007271232743082168,
+      "1y neg": 0.33689839572192515,
+      "3y median": 0.004004058297996105,
+      "3y neg": 0.3803680981595092,
+      "5y median": 0.0010155182883595515,
+      "5y neg": 0.4748201438848921,
+      "10y median": 0.0017613246688368278,
+      "10y neg": 0.35443037974683544
+     }
+    ]
+   },
+   "us": {
+    "label": "United States",
+    "portfolios": [
+     {
+      "n": "100% US stocks",
+      "cagr_real": 0.11426920809831942,
+      "cagr_nominal": 0.14591514288531293,
+      "volatility": 0.14359812013381695,
+      "max_drawdown": -0.23927178828328322,
+      "sharpe": 0.9316165920320596,
+      "worst_year": -0.18175369365014982,
+      "weights": {
+       "acoes_us": 1.0
+      },
+      "note": ""
+     },
+     {
+      "n": "60/40",
+      "cagr_real": 0.06836554202687006,
+      "cagr_nominal": 0.09816648534766825,
+      "volatility": 0.09201753100523477,
+      "max_drawdown": -0.2033738071085951,
+      "sharpe": 0.9213592282347177,
+      "worst_year": -0.1631395161833501,
+      "weights": {
+       "acoes_us": 0.6,
+       "bonds_us": 0.4
+      },
+      "note": "the textbook portfolio"
+     },
+     {
+      "n": "Global 60/40",
+      "cagr_real": 0.051660614231375135,
+      "cagr_nominal": 0.08104756319416473,
+      "volatility": 0.09134646905157905,
+      "max_drawdown": -0.21142714596598433,
+      "sharpe": 0.75513915895056,
+      "worst_year": -0.15754034328204525,
+      "weights": {
+       "acoes_us": 0.36,
+       "intl_dev": 0.18,
+       "emergentes": 0.06,
+       "bonds_us": 0.4
+      },
+      "note": "the same, with the equity sleeve spread worldwide"
+     },
+     {
+      "n": "Permanent portfolio",
+      "cagr_real": 0.04179164209091435,
+      "cagr_nominal": 0.07216822060130013,
+      "volatility": 0.06987540611699247,
+      "max_drawdown": -0.16048251233601796,
+      "sharpe": 0.8488294196828166,
+      "worst_year": -0.1254033771198909,
+      "weights": {
+       "acoes_us": 0.25,
+       "tbills": 0.25,
+       "treasuries_longas": 0.25,
+       "ouro_usd": 0.25
+      },
+      "note": ""
+     },
+     {
+      "n": "100% cash (T-bills)",
+      "cagr_real": -0.01317048269413279,
+      "cagr_nominal": 0.013371687635996388,
+      "volatility": 0.005418726313376587,
+      "max_drawdown": -0.004098610013146486,
+      "sharpe": null,
+      "worst_year": -0.0013119973678860086,
+      "weights": {
+       "tbills": 1.0
+      },
+      "note": ""
+     }
+    ],
+    "rebalance": [
+     {
+      "n": "60/40",
+      "rebalanced": 0.06836554202687006,
+      "drifting": 0.08689103969209877
+     },
+     {
+      "n": "Global 60/40",
+      "rebalanced": 0.051660614231375135,
+      "drifting": 0.06875160510400558
+     },
+     {
+      "n": "Permanent portfolio",
+      "rebalanced": 0.04179164209091435,
+      "drifting": 0.05631455927802187
+     }
+    ],
+    "windows5y": [
+     {
+      "n": "Bitcoin",
+      "median": 0.5599061596871715,
+      "p5": 0.05650899092177242,
+      "p95": 1.3805515471402203,
+      "worst": -0.005886824524423573,
+      "best": 1.6353286430024059,
+      "share_negative": 0.012345679012345678,
+      "share_below_cash": 0.0,
+      "worst_months_underwater": 35.0,
+      "share_underwater": 0.7801418439716312,
+      "n_windows": 81.0
+     },
+     {
+      "n": "Nasdaq 100",
+      "median": 0.15331304022747005,
+      "p5": 0.09355399461490141,
+      "p95": 0.23613774343223423,
+      "worst": 0.07580937383622266,
+      "best": 0.2490920755456334,
+      "share_negative": 0.0,
+      "share_below_cash": 0.0,
+      "worst_months_underwater": 25.0,
+      "share_underwater": 0.5583756345177665,
+      "n_windows": 137.0
+     },
+     {
+      "n": "US stocks (S&P 500)",
+      "median": 0.10686156432275573,
+      "p5": 0.06582981608089625,
+      "p95": 0.14528769324615742,
+      "worst": 0.047675817230167894,
+      "best": 0.1564201945380026,
+      "share_negative": 0.0,
+      "share_below_cash": 0.0,
+      "worst_months_underwater": 26.0,
+      "share_underwater": 0.5736040609137056,
+      "n_windows": 137.0
+     },
+     {
+      "n": "Swing quant (momentum)",
+      "median": 0.07304485327303678,
+      "p5": 0.022394944873305,
+      "p95": 0.09519119135015032,
+      "worst": 0.013199933405936504,
+      "best": 0.10373095921265496,
+      "share_negative": 0.0,
+      "share_below_cash": 0.0,
+      "worst_months_underwater": 34.0,
+      "share_underwater": 0.6548223350253807,
+      "n_windows": 137.0
+     },
+     {
+      "n": "US small caps",
+      "median": 0.0589349292645347,
+      "p5": 0.0004744073532750889,
+      "p95": 0.13688057937025658,
+      "worst": -0.020352881745550833,
+      "best": 0.15448922551004318,
+      "share_negative": 0.051094890510948905,
+      "share_below_cash": 0.0072992700729927005,
+      "worst_months_underwater": 56.0,
+      "share_underwater": 0.7715736040609137,
+      "n_windows": 137.0
+     },
+     {
+      "n": "REITs",
+      "median": 0.04588438153584917,
+      "p5": -0.011271406367944636,
+      "p95": 0.11393224967699132,
+      "worst": -0.02066525934152974,
+      "best": 0.1583412522825991,
+      "share_negative": 0.1386861313868613,
+      "share_below_cash": 0.0072992700729927005,
+      "worst_months_underwater": 54.0,
+      "share_underwater": 0.7817258883248731,
+      "n_windows": 137.0
+     },
+     {
+      "n": "Developed ex-US",
+      "median": 0.037474390846975014,
+      "p5": -0.015851338491145617,
+      "p95": 0.07357108894521965,
+      "worst": -0.04561646390656626,
+      "best": 0.08637140802782461,
+      "share_negative": 0.1386861313868613,
+      "share_below_cash": 0.043795620437956206,
+      "worst_months_underwater": 47.0,
+      "share_underwater": 0.817258883248731,
+      "n_windows": 137.0
+     },
+     {
+      "n": "Gold",
+      "median": 0.030217796417326692,
+      "p5": -0.07469701831030137,
+      "p95": 0.11437953333420824,
+      "worst": -0.09244527481364484,
+      "best": 0.16719350690270685,
+      "share_negative": 0.38686131386861317,
+      "share_below_cash": 0.35036496350364965,
+      "worst_months_underwater": 157.0,
+      "share_underwater": 0.883248730964467,
+      "n_windows": 137.0
+     },
+     {
+      "n": "Long treasuries (20y+)",
+      "median": 0.014342046292619592,
+      "p5": -0.126742121452815,
+      "p95": 0.08402673556481706,
+      "worst": -0.14040327721630652,
+      "best": 0.09709446264022148,
+      "share_negative": 0.3722627737226277,
+      "share_below_cash": 0.35766423357664234,
+      "worst_months_underwater": 71.0,
+      "share_underwater": 0.9086294416243654,
+      "n_windows": 137.0
+     },
+     {
+      "n": "US aggregate bonds",
+      "median": 0.00596969514903134,
+      "p5": -0.047561536479117025,
+      "p95": 0.02426309890409497,
+      "worst": -0.053486940079927714,
+      "best": 0.02739358273797632,
+      "share_negative": 0.39416058394160586,
+      "share_below_cash": 0.35036496350364965,
+      "worst_months_underwater": 71.0,
+      "share_underwater": 0.8578680203045685,
+      "n_windows": 137.0
+     },
+     {
+      "n": "Emerging markets",
+      "median": 0.001066011840926917,
+      "p5": -0.06073601090976268,
+      "p95": 0.08136418559229244,
+      "worst": -0.07374667165223614,
+      "best": 0.12155226672245556,
+      "share_negative": 0.49635036496350365,
+      "share_below_cash": 0.3284671532846715,
+      "worst_months_underwater": 80.0,
+      "share_underwater": 0.9238578680203046,
+      "n_windows": 137.0
+     },
+     {
+      "n": "TIPS",
+      "median": -0.0038938587298645855,
+      "p5": -0.032891950069336894,
+      "p95": 0.024127822483625692,
+      "worst": -0.034695586663470945,
+      "best": 0.0297997794941105,
+      "share_negative": 0.5547445255474452,
+      "share_below_cash": 0.24817518248175183,
+      "worst_months_underwater": 89.0,
+      "share_underwater": 0.8883248730964467,
+      "n_windows": 137.0
+     },
+     {
+      "n": "T-bills (cash)",
+      "median": -0.013934125314002288,
+      "p5": -0.026004452754829856,
+      "p95": -0.007456188851904156,
+      "worst": -0.02860831895169158,
+      "best": -0.0052989020230969075,
+      "share_negative": 1.0,
+      "share_below_cash": 0.0,
+      "worst_months_underwater": 196.0,
+      "share_underwater": 0.9949238578680203,
+      "n_windows": 137.0
+     },
+     {
+      "n": "Commodities",
+      "median": -0.04023737757732848,
+      "p5": -0.14541968607727818,
+      "p95": 0.09473048036750073,
+      "worst": -0.16727472041842795,
+      "best": 0.12408823036867545,
+      "share_negative": 0.5109489051094891,
+      "share_below_cash": 0.5109489051094891,
+      "worst_months_underwater": 182.0,
+      "share_underwater": 0.9593908629441624,
+      "n_windows": 137.0
+     }
+    ],
+    "portfolio_windows5y": [
+     {
+      "n": "100% US stocks",
+      "median": 0.10686156432275573,
+      "p5": 0.06582981608089625,
+      "p95": 0.14528769324615742,
+      "worst": 0.047675817230167894,
+      "best": 0.1564201945380026,
+      "share_negative": 0.0,
+      "share_below_cash": 0.0,
+      "worst_months_underwater": 26.0,
+      "share_underwater": 0.5736040609137056,
+      "n_windows": 137.0
+     },
+     {
+      "n": "60/40",
+      "median": 0.06329705720635581,
+      "p5": 0.027455783014160365,
+      "p95": 0.09293846544350938,
+      "worst": 0.017856176592094597,
+      "best": 0.09640929705725587,
+      "share_negative": 0.0,
+      "share_below_cash": 0.0,
+      "worst_months_underwater": 32.0,
+      "share_underwater": 0.5888324873096447,
+      "n_windows": 137.0
+     },
+     {
+      "n": "Global 60/40",
+      "median": 0.04432607935542965,
+      "p5": 0.008026860960867799,
+      "p95": 0.07505878620885785,
+      "worst": -0.006156250256596052,
+      "best": 0.0794345461282906,
+      "share_negative": 0.021897810218978103,
+      "share_below_cash": 0.0,
+      "worst_months_underwater": 45.0,
+      "share_underwater": 0.6649746192893401,
+      "n_windows": 137.0
+     },
+     {
+      "n": "Permanent portfolio",
+      "median": 0.026256903766893824,
+      "p5": 0.006017107846596837,
+      "p95": 0.05898137313532512,
+      "worst": -0.002518155200782246,
+      "best": 0.0703455757934397,
+      "share_negative": 0.014598540145985401,
+      "share_below_cash": 0.0,
+      "worst_months_underwater": 53.0,
+      "share_underwater": 0.7766497461928934,
+      "n_windows": 137.0
+     },
+     {
+      "n": "100% cash (T-bills)",
+      "median": -0.013934125314002288,
+      "p5": -0.026004452754829856,
+      "p95": -0.007456188851904156,
+      "worst": -0.02860831895169158,
+      "best": -0.0052989020230969075,
+      "share_negative": 1.0,
+      "share_below_cash": 0.0,
+      "worst_months_underwater": 196.0,
+      "share_underwater": 0.9949238578680203,
+      "n_windows": 137.0
+     }
+    ],
+    "tax": [
+     {
+      "n": "Bitcoin",
+      "gross_real": 0.5034754228621108,
+      "net_real": 0.48295512078473357,
+      "tax_drag": 0.020520302077377206,
+      "inflation_tax": 0.006245607557514576,
+      "note": ""
+     },
+     {
+      "n": "Nasdaq 100",
+      "gross_real": 0.1603162890673171,
+      "net_real": 0.14878239167692842,
+      "tax_drag": 0.011533897390388681,
+      "inflation_tax": 0.0041470686177143,
+      "note": ""
+     },
+     {
+      "n": "US stocks (S&P 500)",
+      "gross_real": 0.11426920809831942,
+      "net_real": 0.10298653731273966,
+      "tax_drag": 0.011282670785579763,
+      "inflation_tax": 0.003903971714160459,
+      "note": ""
+     },
+     {
+      "n": "US small caps",
+      "gross_real": 0.08569985731172802,
+      "net_real": 0.07588421669609158,
+      "tax_drag": 0.009815640615636445,
+      "inflation_tax": 0.003773163897770937,
+      "note": ""
+     },
+     {
+      "n": "REITs",
+      "gross_real": 0.06858956237385438,
+      "net_real": 0.054269242029722164,
+      "tax_drag": 0.01432032034413222,
+      "inflation_tax": 0.0035365632883996856,
+      "note": "distributions are ordinary income, not qualified dividends"
+     },
+     {
+      "n": "Developed ex-US",
+      "gross_real": 0.046723510661149215,
+      "net_real": 0.03772970343723148,
+      "tax_drag": 0.008993807223917738,
+      "inflation_tax": 0.003479458427426918,
+      "note": ""
+     },
+     {
+      "n": "Gold",
+      "gross_real": 0.049118587600381236,
+      "net_real": 0.03516698497318549,
+      "tax_drag": 0.013951602627195747,
+      "inflation_tax": 0.007310323550708819,
+      "note": "collectibles rate, not the 15% equity rate"
+     },
+     {
+      "n": "Emerging markets",
+      "gross_real": 0.024335762658601823,
+      "net_real": 0.017431240953491134,
+      "tax_drag": 0.006904521705110689,
+      "inflation_tax": 0.0031396268504042535,
+      "note": ""
+     },
+     {
+      "n": "TIPS",
+      "gross_real": 0.001009229415638524,
+      "net_real": -0.005143511605137596,
+      "tax_drag": 0.00615274102077612,
+      "inflation_tax": 0.0,
+      "note": "phantom income on the accrual"
+     },
+     {
+      "n": "Commodities",
+      "gross_real": -0.0011680393945163736,
+      "net_real": -0.0072083580718041995,
+      "tax_drag": 0.006040318677287826,
+      "inflation_tax": 0.006040318677287826,
+      "note": ""
+     },
+     {
+      "n": "US aggregate bonds",
+      "gross_real": -0.0028549046234636055,
+      "net_real": -0.009721020863642571,
+      "tax_drag": 0.0068661162401789655,
+      "inflation_tax": 0.0,
+      "note": ""
+     },
+     {
+      "n": "Long treasuries (20y+)",
+      "gross_real": -0.004880306037871374,
+      "net_real": -0.011755429581511767,
+      "tax_drag": 0.0068751235436403935,
+      "inflation_tax": 0.0,
+      "note": ""
+     },
+     {
+      "n": "T-bills (cash)",
+      "gross_real": -0.01317048269413279,
+      "net_real": -0.016350427806955725,
+      "tax_drag": 0.003179945112822935,
+      "inflation_tax": 0.0,
+      "note": "interest taxed yearly"
+     }
+    ],
+    "regime": {
+     "buckets": [
+      "low real rate",
+      "middle",
+      "high real rate"
+     ],
+     "bounds": {
+      "low real rate": [
+       -0.08233902379863212,
+       -0.017457042552726065
+      ],
+      "middle": [
+       -0.01739664944392849,
+       -0.005375561667247286
+      ],
+      "high real rate": [
+       -0.004979071132058643,
+       0.02848528531120542
+      ]
+     },
+     "months": {
+      "low real rate": 59,
+      "middle": 59,
+      "high real rate": 59
+     },
+     "rows": [
+      {
+       "n": "US stocks (S&P 500)",
+       "low real rate": 0.056520028895845176,
+       "middle": 0.1254375528690772,
+       "high real rate": 0.15008893589062922
+      },
+      {
+       "n": "Nasdaq 100",
+       "low real rate": 0.07264333542784818,
+       "middle": 0.1462601641641239,
+       "high real rate": 0.2559934443802472
+      },
+      {
+       "n": "US small caps",
+       "low real rate": -0.024993829619467278,
+       "middle": 0.17516019130769056,
+       "high real rate": 0.056065532831335085
+      },
+      {
+       "n": "Developed ex-US",
+       "low real rate": 0.012200133197677543,
+       "middle": 0.019112362093247848,
+       "high real rate": 0.07617324202281539
+      },
+      {
+       "n": "Emerging markets",
+       "low real rate": -0.05041087530750055,
+       "middle": -0.0033452368252048226,
+       "high real rate": 0.06379253902186677
+      },
+      {
+       "n": "REITs",
+       "low real rate": 0.029888597787403715,
+       "middle": 0.07255989365855631,
+       "high real rate": 0.041483958417740885
+      },
+      {
+       "n": "US aggregate bonds",
+       "low real rate": -0.03748569165201432,
+       "middle": -0.007114967190871679,
+       "high real rate": 0.03516254203847269
+      },
+      {
+       "n": "Long treasuries (20y+)",
+       "low real rate": -0.02903481551187237,
+       "middle": -0.022200712432746683,
+       "high real rate": 0.0445106326601159
+      },
+      {
+       "n": "TIPS",
+       "low real rate": -0.011562889996610148,
+       "middle": -0.018083705386457316,
+       "high real rate": 0.03243875842803279
+      },
+      {
+       "n": "Gold",
+       "low real rate": 0.031091339041322552,
+       "middle": -0.11354953263172851,
+       "high real rate": 0.2229930993280418
+      },
+      {
+       "n": "Commodities",
+       "low real rate": 0.00585036254023108,
+       "middle": -0.04259111611961808,
+       "high real rate": -0.05427379006393951
+      },
+      {
+       "n": "Bitcoin",
+       "low real rate": 0.001166488983606051,
+       "middle": 1.3568264509508383,
+       "high real rate": 0.6199376322358332
+      },
+      {
+       "n": "T-bills (cash)",
+       "low real rate": -0.03818220076223533,
+       "middle": -0.008331893300032478,
+       "high real rate": 0.005629196399055125
+      },
+      {
+       "n": "Swing quant (momentum)",
+       "low real rate": 0.008664789191518585,
+       "middle": 0.11408147508962552,
+       "high real rate": 0.11726273308503665
+      }
+     ]
+    },
+    "horizons": [
+     {
+      "class": "US stocks (S&P 500)",
+      "1y median": 0.13471112431847931,
+      "1y neg": 0.12972972972972974,
+      "3y median": 0.10794190549061944,
+      "3y neg": 0.0,
+      "5y median": 0.10686156432275573,
+      "5y neg": 0.0,
+      "10y median": 0.10347972694033047,
+      "10y neg": 0.0
+     },
+     {
+      "class": "US aggregate bonds",
+      "1y median": 0.006571255688630151,
+      "1y neg": 0.43783783783783786,
+      "3y median": 0.007139006794276481,
+      "3y neg": 0.37888198757763975,
+      "5y median": 0.00596969514903134,
+      "5y neg": 0.39416058394160586,
+      "10y median": -0.012183468025232735,
+      "10y neg": 0.6753246753246753
+     },
+     {
+      "class": "T-bills (cash)",
+      "1y median": -0.012773387474481868,
+      "1y neg": 0.7189189189189189,
+      "3y median": -0.012191121555388595,
+      "3y neg": 0.8881987577639752,
+      "5y median": -0.013934125314002288,
+      "5y neg": 1.0,
+      "10y median": -0.01392993284121491,
+      "10y neg": 1.0
+     },
+     {
+      "class": "REITs",
+      "1y median": 0.06366975568632394,
+      "1y neg": 0.31891891891891894,
+      "3y median": 0.056561717079270935,
+      "3y neg": 0.2422360248447205,
+      "5y median": 0.04588438153584917,
+      "5y neg": 0.1386861313868613,
+      "10y median": 0.036255807582767696,
+      "10y neg": 0.0
+     },
+     {
+      "class": "Gold",
+      "1y median": 0.027718600668141358,
+      "1y neg": 0.43783783783783786,
+      "3y median": 0.01023452203362929,
+      "3y neg": 0.45962732919254656,
+      "5y median": 0.030217796417326692,
+      "5y neg": 0.38686131386861317,
+      "10y median": 0.01367079791538206,
+      "10y neg": 0.33766233766233766
+     }
+    ]
+   }
+  }
+ },
  "costs": [
   {
    "market": "Brazil (B3)",

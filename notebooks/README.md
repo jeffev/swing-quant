@@ -1,15 +1,16 @@
 # Estudo: swing trade x investir
 
 Análise de dados comparando o swing trade quantitativo do projeto com as alternativas passivas
-— quatro baselines de ações/caixa e, desde a seção 13, **todas as classes de ativo** que um
-investidor brasileiro ou americano podia ter comprado — sobre os 16,6 anos de histórico do
-`data/market.duckdb` (2010-01 a 2026-08).
+— quatro baselines de ações/caixa, **todas as classes de ativo** que um investidor brasileiro ou
+americano podia ter comprado (seção 13) e as **carteiras** que ele montaria com elas (seções
+14-17) — sobre os 16,6 anos de histórico do `data/market.duckdb` (2010-01 a 2026-08).
 
 | Arquivo | O que é |
 |---|---|
-| `swing_vs_investing.ipynb` | O estudo: 8 achados, tabelas e figuras, com as saídas já executadas |
+| `swing_vs_investing.ipynb` | O estudo: 12 achados, tabelas e figuras, com as saídas já executadas |
 | `study_lib.py` | Os helpers do estudo (baselines passivas, juros sobre o caixa, impostos, DCA) |
 | `asset_classes.py` | A comparação entre classes de ativo (seção 13): curvas mensais, retorno real, correlação |
+| `investor.py` | As quatro seções do investidor (14-17): carteiras, janelas móveis, imposto por classe, regime de juros |
 | `study_results.json` | Todos os números exportados pelo notebook — fonte única do artigo |
 | `article/swing_vs_investing.html` | O artigo publicado (gráficos em SVG, dados embutidos) |
 | `figures/` | PNGs das figuras (regeneráveis; fora do git, já estão dentro do `.ipynb`) |
@@ -47,6 +48,25 @@ Os proxies vivem no mesmo `market.duckdb`, ingeridos por `swing-quant update-ass
 
 A comparação é mensal porque imóvel e poupança só existem mensalmente, e o retorno reportado é
 **real** (deflacionado por IPCA no Brasil, CPI nos EUA) — em 16 anos a inflação decide o ranking.
+
+## O que o `investor.py` responde (seções 14-17)
+
+Uma tabela de CAGR de 16 anos não decide nada; estas quatro contas decidem:
+
+1. **Carteiras** (`portfolio`, `blend_returns`): rebalanceamento anual com drift entre as datas.
+   O achado: 20% de S&P em reais numa 60/40 brasileira levou o retorno real de 2,2% para 5,5%
+   a.a. **e** cortou a queda máxima de 22% para 14%.
+2. **Distribuições** (`window_stats`, `time_to_recover`): todas as janelas de 1/3/5/10 anos, não
+   um CAGR único. 37% das janelas de 5 anos do Ibovespa terminaram abaixo da inflação, e o índice
+   passou 15,8 dos 16,6 anos abaixo do pico real.
+3. **Imposto por classe** (`TaxProfile`, `after_tax_cagr`): renda tributada quando chega e
+   reinvestida **eleva o custo de aquisição** — ignorar isso bitributaria um FII isento. Cerca de
+   3/4 do imposto pago no CDI incide sobre inflação, não sobre ganho real.
+4. **Regime de juros** (`by_rate_regime`): no terço de juro real mais baixo, todo ativo de risco
+   doméstico teve seu pior resultado; só o S&P em reais pagou.
+
+As premissas de imposto (alíquotas, yields, custos de transação do imóvel) estão declaradas em
+`TAX_BR` / `TAX_US`, e as que mais movem o resultado estão nos caveats do artigo.
 
 ## O que o `study_lib` acrescenta ao motor
 
