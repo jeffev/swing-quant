@@ -1,6 +1,5 @@
 <!--
   Post para o Kaggle (Discussions). Copiar do título para baixo.
-  Antes de publicar, trocar PAGE_URL pela URL final do GitHub Pages.
   Versão em português no fim do arquivo.
 -->
 
@@ -10,7 +9,7 @@ I spent the last few weeks building a quantitative swing-trading system for Braz
 
 The short version: the system beat the index in Brazil by 6.7 points a year. After I fixed the comparison, the real edge was 3.2 points — and more than half of what was left came from a money-market account, not from trading.
 
-Full write-up, with interactive charts: **PAGE_URL**
+Full write-up, with interactive charts: **https://jeffev.github.io/swing-quant/** — code: https://github.com/jeffev/swing-quant
 
 ---
 
@@ -72,7 +71,7 @@ Passei as últimas semanas construindo um sistema quantitativo de swing trade pa
 
 Resumo: o sistema bateu o índice no Brasil por 6,7 pontos ao ano. Depois de consertar a comparação, a vantagem real era 3,2 pontos — e mais da metade do que sobrou vinha de uma conta remunerada, não de trade.
 
-Artigo completo, com gráficos interativos: **PAGE_URL** *(edição em português: PAGE_URL/pt/)*
+Artigo completo, com gráficos interativos: **https://jeffev.github.io/swing-quant/pt/**
 
 ## O que quebrava a comparação
 
