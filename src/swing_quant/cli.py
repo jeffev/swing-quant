@@ -343,6 +343,54 @@ def update_assets(
     raise typer.Exit(code=exit_code)
 
 
+@app.command("update-etfs")
+def update_etfs(
+    venue: Annotated[
+        str, typer.Option(help="b3, us ou all — em qual bolsa o ETF é negociado")
+    ] = "all",
+    config: ConfigOpt = DEFAULT_CONFIG_PATH,
+) -> None:
+    """Baixa os ETFs que um brasileiro usa para comprar bolsa lá fora, com os proventos.
+
+    Preço e dividendo vêm da mesma chamada do yfinance, na mesma base de desdobramento, porque a
+    comparação entre a rota B3 e a rota EUA depende de saber quanto do retorno chegou como
+    dividendo — é sobre ele que o IRS retém 30%.
+    """
+    import datetime as dt
+
+    from swing_quant.data.etfs import USDBRL, etfs_for, fetch_etf_history
+    from swing_quant.data.store import MarketStore
+
+    cfg = load_config(config)
+    today = dt.date.today()
+    vehicles = etfs_for(None if venue == "all" else venue)
+    tickers = [e.ticker for e in vehicles]
+    exit_code = 0
+    with MarketStore(cfg.data.db_path) as store:
+        console.rule(f"[bold]ETFs — {len(vehicles)} veículos")
+        # O câmbio vem do `update-assets` e não é rebaixado aqui: as outras seções do estudo já
+        # foram calculadas com essa série, e trocá-la por baixo mudaria números publicados.
+        if USDBRL not in store.last_dates([USDBRL]):
+            console.print(f"[yellow]{USDBRL} ausente — rode `update-assets` antes[/yellow]")
+            exit_code = 1
+        for ticker in tickers:
+            try:
+                prices, events = fetch_etf_history(ticker, cfg.data.history_start, today)
+            except Exception as exc:  # uma falha de rede não derruba o lote inteiro
+                console.print(f"[red]{ticker}: falhou[/red] — {exc}")
+                exit_code = 1
+                continue
+            if prices.empty:
+                console.print(f"[yellow]{ticker}: sem dados[/yellow]")
+                exit_code = 1
+                continue
+            n = store.upsert_prices(prices)
+            n_ev = store.upsert_corporate_events(events) if not events.empty else 0
+            first = prices["date"].min().date()
+            console.print(f"{ticker}: {n} pregões desde {first}, {n_ev} eventos")
+    raise typer.Exit(code=exit_code)
+
+
 def _index_as_prices(serie: pd.DataFrame, symbol: str) -> pd.DataFrame:
     """Série de fechamento de índice no formato da tabela `prices`.
 
