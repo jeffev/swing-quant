@@ -157,6 +157,22 @@ def deflate(nominal: pd.Series, inflation: pd.Series) -> pd.Series:
     return ((1.0 + nominal) / (1.0 + infl) - 1.0).dropna()
 
 
+def annual_returns(monthly: pd.Series, inflation: pd.Series | None = None) -> pd.Series:
+    """Calendar-year returns of a monthly series, real when `inflation` is given.
+
+    The canonical yearly view for the whole study: a CAGR says a thing won, only the years say
+    when, and two curves with the same CAGR and opposite years are not the same investment.
+    """
+    rets = monthly if inflation is None else deflate(monthly, inflation)
+    return (1.0 + rets).groupby(rets.index.year).prod() - 1.0
+
+
+def cagr(monthly: pd.Series, inflation: pd.Series | None = None) -> float:
+    rets = monthly if inflation is None else deflate(monthly, inflation)
+    years = len(rets) / MONTHS
+    return float((1.0 + rets).prod() ** (1.0 / years) - 1.0) if years else float("nan")
+
+
 def max_drawdown_monthly(returns: pd.Series) -> float:
     curve = (1.0 + returns).cumprod()
     return float((curve / curve.cummax() - 1.0).min())
