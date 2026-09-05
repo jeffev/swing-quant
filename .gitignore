@@ -34,3 +34,6 @@ reports/
 .idea/
 Thumbs.db
 .DS_Store
+
+# Site gerado a partir de notebooks/article (ver notebooks/build_pages.py)
+site/
